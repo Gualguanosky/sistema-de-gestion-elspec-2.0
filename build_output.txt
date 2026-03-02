@@ -1,0 +1,22 @@
+
+> sistema-tickets-elspec@0.0.0 build
+> vite build
+
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32m✓[39m 33 modules transformed.
+[31m✗[39m Build failed in 734ms
+[31merror during build:
+[31m[vite:define] Transform failed with 1 error:
+C:/Users/gualg/OneDrive/Documentos/Imágenes/desarrollos elspec andina/sistema-tickets-elspec/src/services/firebase.js:15:9: ERROR: The symbol "getAuth" has already been declared[31m
+file: [36mC:/Users/gualg/OneDrive/Documentos/Imágenes/desarrollos elspec andina/sistema-tickets-elspec/src/services/firebase.js[31m
+    at failureErrorWithLog (C:\Users\gualg\OneDrive\Documentos\Imágenes\desarrollos elspec andina\sistema-tickets-elspec\node_modules\esbuild\lib\main.js:1467:15)
+    at C:\Users\gualg\OneDrive\Documentos\Imágenes\desarrollos elspec andina\sistema-tickets-elspec\node_modules\esbuild\lib\main.js:736:50
+    at responseCallbacks.<computed> (C:\Users\gualg\OneDrive\Documentos\Imágenes\desarrollos elspec andina\sistema-tickets-elspec\node_modules\esbuild\lib\main.js:603:9)
+    at handleIncomingPacket (C:\Users\gualg\OneDrive\Documentos\Imágenes\desarrollos elspec andina\sistema-tickets-elspec\node_modules\esbuild\lib\main.js:658:12)
+    at Socket.readFromStdout (C:\Users\gualg\OneDrive\Documentos\Imágenes\desarrollos elspec andina\sistema-tickets-elspec\node_modules\esbuild\lib\main.js:581:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)[39m

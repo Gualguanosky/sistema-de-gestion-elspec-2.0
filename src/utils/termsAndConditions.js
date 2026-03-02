@@ -1,0 +1,59 @@
+export const TIPOS_OFERTA = {
+    ESTANDAR: "001 - Soluciones Calidad Cliente Nacional",
+    INSTALACION: "001 - Soluciones Calidad Cliente Nacional / Servicio instalación",
+    AGENTES: "001 - Soluciones Calidad Agentes Elspec",
+    AHORRO: "002 - Soluciones Ahorro Cliente Nacional",
+    AHORRO_INSTALACION: "002 - Soluciones Ahorro Cliente Nacional / Servicio instalación",
+    REPUESTOS: "004 - Componentes/Repuestos",
+    REPUESTOS_AGENTES: "004 - Componentes/Repuestos Agentes Elspec"
+};
+
+// Mapeo detallado de los términos exhaustivos proporcionados por el usuario
+export const TERMINOS_EXHAUSTIVOS = [
+    {
+        titulo: "TERMINOS Y CONDICIONES",
+        contenido: [
+            "Las siguientes condiciones regularán la relación comercial entre Elspec Engineering Ltd. (en adelante 'Elspec') y el Cliente, a partir de la fecha en la que el cliente acepte esta oferta.",
+            "1. Condiciones específicas de la oferta:",
+            "1.1. Los sistemas serie ACTIVAR marca Elspec, presentados en esta oferta cuentan con certificación RETIE emitido por UL Colombia, bajo el número de certificado UL-CO-0100.",
+            "1.2. Las dimensiones mencionadas son estimadas y estas podrían verse modificadas en el proceso de diseño de la solución, las mismas serán presentadas al cliente una vez contemos con el diseño de fábrica.",
+            "1.3. El sistema fue dimensionado según la demanda al momento de las mediciones del día 02/11/2021 para el transformador principal de 1000 kVA.",
+            "1.3.1. La demanda máxima sostenida se encuentra alrededor de los 200KVAr con picos de 345KVAr. Tensión promedio 225V. Factor de Potencia 0.93 IND. THDu 5.4% promedio.",
+            "1.4. En caso de incremento en la cargabilidad (>10%), se requerirán nuevas mediciones para garantizar la correctas compensación.",
+            "1.5. El sistema Activar corrige el factor de potencia, reduce armónicos y estabiliza tensión. Se pretende alcanzar un factor de potencia no inferior a 0,96 IND."
+        ]
+    },
+    {
+        titulo: "2. PRECIO Y 3. GARANTÍA",
+        contenido: [
+            "2.1. Precios en dólares estadounidenses, convertibles a pesos colombianos con la TRM del día de la facturación.",
+            "2.2. Los precios señalados en esta oferta no incluyen IVA (19%).",
+            "3.1. Garantía para productos nuevos: Cubre defectos de material y mano de obra por doce (12) meses desde la entrega.",
+            "3.2. La garantía no es válida contra aplicación de magnitudes eléctricas fuera de los límites especificados o manipulación por personal no autorizado.",
+            "3.3. Garantía para reparación de componentes: Tres (3) meses a partir del envío."
+        ]
+    },
+    {
+        titulo: "4. ENTREGA Y 5. CONDICIONES DE PAGO",
+        contenido: [
+            "4.1. Entrega bajo Incoterm DDP (o según se negocie) en planta del cliente.",
+            "4.2. Plazo de entrega: 10 a 13 semanas tras recibir Orden de Compra y Anticipo.",
+            "5.1. Anticipo: 30% a la emisión de la orden de compra.",
+            "5.2. Saldo: 70% restante pago a contra entrega.",
+            "5.3. Intereses por mora: 18% anual sobre pagos vencidos."
+        ]
+    },
+    {
+        titulo: "6. SERVICIOS Y 7. EXCLUSIONES",
+        contenido: [
+            "6.1. Incluye 1 día laboral (4 horas) por sistema para configuración.",
+            "7.1. Exclusiones: CTs (Transformadores de Corriente), cables, conectores, interruptores, DPS y similares.",
+            "7.2. No incluye montaje eléctrico, mecánico ni civil, ni estudios de coordinación de protecciones.",
+            "16. Vigencia: 15 días para ofertas en COP, 30 días para ofertas en USD."
+        ]
+    }
+];
+
+export const OBTENER_TERMINOS = (tipo) => {
+    return TERMINOS_EXHAUSTIVOS;
+};
