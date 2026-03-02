@@ -10,6 +10,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logoImg from '../assets/logo.png';
 import { TIPOS_OFERTA, OBTENER_TERMINOS, TERMINOS_EXHAUSTIVOS } from '../utils/termsAndConditions';
+import PricingVariables from './PricingVariables';
 
 const SalesManagement = () => {
     const { user } = useAuth();
@@ -333,6 +334,15 @@ const SalesManagement = () => {
                 >
                     Gestión de Términos
                 </button>
+                <button
+                    onClick={() => setActiveSubTab('pricing')}
+                    style={{
+                        padding: '10px 20px', background: 'transparent', border: 'none', color: activeSubTab === 'pricing' ? 'var(--primary)' : 'var(--text-muted)',
+                        borderBottom: activeSubTab === 'pricing' ? '2px solid var(--primary)' : 'none', fontWeight: 'bold'
+                    }}
+                >
+                    Variables de Cotización
+                </button>
             </div>
 
             {activeSubTab === 'catalog' ? (
@@ -341,6 +351,8 @@ const SalesManagement = () => {
                 <CustomerManagement />
             ) : activeSubTab === 'terms' ? (
                 <TermsManagement />
+            ) : activeSubTab === 'pricing' ? (
+                <PricingVariables />
             ) : (
                 <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>

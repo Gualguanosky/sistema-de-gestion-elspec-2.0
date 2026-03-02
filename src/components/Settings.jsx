@@ -15,11 +15,6 @@ const Settings = ({ user }) => {
     const [savingKey, setSavingKey] = useState(false);
     const [keyMsg, setKeyMsg] = useState('');
 
-    // Pricing Config State
-    const [pricingConfig, setPricingConfig] = useState(null);
-    const [savingPricing, setSavingPricing] = useState(false);
-    const [pricingMsg, setPricingMsg] = useState('');
-
     const handlePasswordChange = async (e) => {
         e.preventDefault();
         setMessage({ type: '', text: '' });
@@ -59,15 +54,6 @@ const Settings = ({ user }) => {
                 const config = await db.getGlobalConfig();
                 if (config) {
                     if (config.geminiApiKey) setGeminiKey(config.geminiApiKey);
-                    setPricingConfig({
-                        trm_actual: config.trm_actual || 4268.7,
-                        margen_sistema: config.margen_sistema || 1.66,
-                        margen_instalacion: config.margen_instalacion || 1.15,
-                        margen_transporte: config.margen_transporte || 1.35,
-                        factor_imprevistos: config.factor_imprevistos || 0.04,
-                        factor_poliza: config.factor_poliza || 0.008,
-                        factor_negociacion: config.factor_negociacion || 0.03
-                    });
                 }
             };
             loadConfig();
@@ -87,22 +73,6 @@ const Settings = ({ user }) => {
             setKeyMsg('❌ Error al guardar la clave.');
         } finally {
             setSavingKey(false);
-        }
-    };
-
-    const handleSavePricing = async (e) => {
-        e.preventDefault();
-        setSavingPricing(true);
-        setPricingMsg('');
-        try {
-            await db.updateGlobalConfig({ ...pricingConfig });
-            setPricingMsg('✅ Variables de cotización actualizadas.');
-            setTimeout(() => setPricingMsg(''), 3000);
-        } catch (error) {
-            console.error("Error saving pricing config", error);
-            setPricingMsg('❌ Error al guardar.');
-        } finally {
-            setSavingPricing(false);
         }
     };
 
@@ -249,63 +219,6 @@ const Settings = ({ user }) => {
                         </form>
                         {keyMsg && <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem', color: keyMsg.startsWith('✅') ? '#10b981' : '#ef4444' }}>{keyMsg}</p>}
                     </div>
-
-                    {/* Pricing Configuration */}
-                    {pricingConfig && (
-                        <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '12px', padding: '16px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                                <DollarSign size={18} color="#10b981" />
-                                <h5 style={{ margin: 0, fontSize: '0.95rem', color: '#10b981' }}>Variables de Cotización (Motor en Cascada)</h5>
-                            </div>
-                            <p style={{ margin: '0 0 20px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                Modifica los márgenes, TRM y factores de riesgo aplicados en la plataforma para los precios Elspec.
-                            </p>
-                            <form onSubmit={handleSavePricing} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-
-                                <div className="input-group">
-                                    <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>TRM Actual</label>
-                                    <input type="number" step="0.01" value={pricingConfig.trm_actual} onChange={e => setPricingConfig({ ...pricingConfig, trm_actual: parseFloat(e.target.value) || 0 })} style={{ padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: 'white' }} />
-                                </div>
-
-                                <div className="input-group">
-                                    <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Margen Sistema (Ej: 1.66)</label>
-                                    <input type="number" step="0.001" value={pricingConfig.margen_sistema} onChange={e => setPricingConfig({ ...pricingConfig, margen_sistema: parseFloat(e.target.value) || 0 })} style={{ padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: 'white' }} />
-                                </div>
-
-                                <div className="input-group">
-                                    <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Margen Instalación</label>
-                                    <input type="number" step="0.001" value={pricingConfig.margen_instalacion} onChange={e => setPricingConfig({ ...pricingConfig, margen_instalacion: parseFloat(e.target.value) || 0 })} style={{ padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: 'white' }} />
-                                </div>
-
-                                <div className="input-group">
-                                    <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Margen Transporte</label>
-                                    <input type="number" step="0.001" value={pricingConfig.margen_transporte} onChange={e => setPricingConfig({ ...pricingConfig, margen_transporte: parseFloat(e.target.value) || 0 })} style={{ padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: 'white' }} />
-                                </div>
-
-                                <div className="input-group">
-                                    <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Factor Imprevistos (0.04 = 4%)</label>
-                                    <input type="number" step="0.001" value={pricingConfig.factor_imprevistos} onChange={e => setPricingConfig({ ...pricingConfig, factor_imprevistos: parseFloat(e.target.value) || 0 })} style={{ padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: 'white' }} />
-                                </div>
-
-                                <div className="input-group">
-                                    <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Factor Póliza</label>
-                                    <input type="number" step="0.001" value={pricingConfig.factor_poliza} onChange={e => setPricingConfig({ ...pricingConfig, factor_poliza: parseFloat(e.target.value) || 0 })} style={{ padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: 'white' }} />
-                                </div>
-
-                                <div className="input-group">
-                                    <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Factor Negociación</label>
-                                    <input type="number" step="0.001" value={pricingConfig.factor_negociacion} onChange={e => setPricingConfig({ ...pricingConfig, factor_negociacion: parseFloat(e.target.value) || 0 })} style={{ padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: 'white' }} />
-                                </div>
-
-                                <div style={{ gridColumn: '1 / -1', marginTop: '10px' }}>
-                                    <button type="submit" disabled={savingPricing} style={{ background: '#10b981', color: 'black', border: 'none', borderRadius: '8px', padding: '10px 20px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
-                                        {savingPricing ? '⏳ Guardando Variables...' : 'Guardar Variables de Cotización'}
-                                    </button>
-                                    {pricingMsg && <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem', textAlign: 'center', color: pricingMsg.startsWith('✅') ? '#10b981' : '#ef4444' }}>{pricingMsg}</p>}
-                                </div>
-                            </form>
-                        </div>
-                    )}
 
                 </div>
             )}
