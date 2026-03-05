@@ -12,9 +12,12 @@ const CampaignManagement = () => {
     const [status, setStatus] = useState({ type: '', message: '' });
     const [isSending, setIsSending] = useState(false);
     const [activeTab, setActiveTab] = useState('manual'); // 'manual' or 'bulk'
+    const [aiEngine, setAiEngine] = useState('openai'); // 'openai' or 'gemini'
+    const [delayAmount, setDelayAmount] = useState(10);
+    const [delayUnit, setDelayUnit] = useState('hours'); // 'seconds', 'minutes', 'hours'
 
-    // This URL will be replaced by the actual N8N Webhook URL
-    const N8N_WEBHOOK_URL = 'https://n8n-webhook-placeholder.com/webhook/campaign';
+    // Pega aquí la URL de tu Webhook de N8N Cloud (la que termina en /elspec-pro-agent-v2)
+    const N8N_WEBHOOK_URL = 'https://gualguanosky.app.n8n.cloud/webhook-test/elspec-pro-agent-v2';
 
     const handleAddEmail = (e) => {
         e.preventDefault();
@@ -83,36 +86,39 @@ const CampaignManagement = () => {
                 campaignName: campaignName,
                 user: user.name || user.username,
                 timestamp: new Date().toISOString(),
+                aiEngine: aiEngine,
+                delayAmount: parseInt(delayAmount),
+                delayUnit: delayUnit,
                 contacts: emails
             };
 
             console.log("Enviando Webhook a N8N con payload:", payload);
 
-            // Uncomment the fetch call below when the real N8N Webhook URL is available
-            // const response = await fetch(N8N_WEBHOOK_URL, {
-            //    method: 'POST',
-            //    headers: {
-            //        'Content-Type': 'application/json'
-            //    },
-            //    body: JSON.stringify(payload)
-            // });
-            //
-            // if (!response.ok) throw new Error('Error al conectar con el servidor.');
+            // Petición real al Webhook de N8N
+            const response = await fetch(N8N_WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
 
-            // SIMULATION OF DELAY
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Error de N8N (${response.status}): ${errorText}`);
+            }
 
             setStatus({ type: 'success', message: `¡Campaña "${campaignName}" iniciada con éxito! N8N está procesando los envíos.` });
 
-            // Opcional: limpiar formulario después de enviar
-            // setEmails([]);
-            // setCampaignName('');
+            // Limpiar formulario tras éxito
+            setEmails([]);
+            setCampaignName('');
         } catch (error) {
             console.error("Error sending campaign:", error);
-            setStatus({ type: 'error', message: 'Hubo un error al iniciar la campaña. Verifique la conexión con N8N.' });
+            setStatus({ type: 'error', message: `Error al conectar con N8N: ${error.message}` });
         } finally {
             setIsSending(false);
-            setTimeout(() => setStatus({ type: '', message: '' }), 5000);
+            setTimeout(() => setStatus({ type: '', message: '' }), 7000);
         }
     };
 
@@ -149,15 +155,75 @@ const CampaignManagement = () => {
                 <h3 style={{ marginTop: 0, marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <Briefcase size={20} color="var(--primary)" /> Detalles de la Campaña
                 </h3>
-                <div className="input-group">
-                    <label>Nombre de la Campaña</label>
-                    <input
-                        type="text"
-                        placeholder="Ej. Promo Mantenimiento Subestaciones Q3"
-                        value={campaignName}
-                        onChange={(e) => setCampaignName(e.target.value)}
-                        style={{ fontSize: '1.1rem', padding: '12px' }}
-                    />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div className="input-group" style={{ marginBottom: 0 }}>
+                        <label>Nombre de la Campaña</label>
+                        <input
+                            type="text"
+                            placeholder="Ej. Promo Mantenimiento Subestaciones Q3"
+                            value={campaignName}
+                            onChange={(e) => setCampaignName(e.target.value)}
+                            style={{ fontSize: '1.1rem', padding: '12px' }}
+                        />
+                    </div>
+                    <div className="input-group" style={{ marginBottom: 0 }}>
+                        <label>Motor de Inteligencia Artificial</label>
+                        <select
+                            value={aiEngine}
+                            onChange={(e) => setAiEngine(e.target.value)}
+                            style={{
+                                width: '100%',
+                                background: 'rgba(0,0,0,0.3)',
+                                border: '1px solid var(--border-color)',
+                                color: 'white',
+                                padding: '12px',
+                                borderRadius: '8px',
+                                fontSize: '1rem',
+                                outline: 'none'
+                            }}
+                        >
+                            <option value="openai">OpenAI (ChatGPT 4o-mini)</option>
+                            <option value="gemini">Google Gemini (1.5 Pro - Gratis)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px' }}>
+                    <div className="input-group" style={{ marginBottom: 0 }}>
+                        <label>Tiempo de Espera (Delay)</label>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <input
+                                type="number"
+                                min="0"
+                                value={delayAmount}
+                                onChange={(e) => setDelayAmount(e.target.value)}
+                                style={{ flex: '1', padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '8px' }}
+                            />
+                            <select
+                                value={delayUnit}
+                                onChange={(e) => setDelayUnit(e.target.value)}
+                                style={{
+                                    flex: '1',
+                                    background: 'rgba(0,0,0,0.3)',
+                                    border: '1px solid var(--border-color)',
+                                    color: 'white',
+                                    padding: '12px',
+                                    borderRadius: '8px'
+                                }}
+                            >
+                                <option value="seconds">Segundos</option>
+                                <option value="minutes">Minutos</option>
+                                <option value="hours">Horas</option>
+                            </select>
+                        </div>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '5px', margin: 0 }}>
+                            Pausa entre cada envío. Usa 0 para envío inmediato.
+                        </p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', paddingTop: '20px' }}>
+                        <AlertCircle size={16} style={{ marginRight: '8px' }} />
+                        El delay se aplica <i>antes</i> de cada envío comercial.
+                    </div>
                 </div>
             </div>
 
