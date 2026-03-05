@@ -11,6 +11,7 @@ import SGIUnifiedView from './SGIUnifiedView';
 import OperationsSchedule from './OperationsSchedule';
 import SalesManagement from './SalesManagement';
 import CatalogConverter from './CatalogConverter';
+import CampaignManagement from './CampaignManagement';
 import Settings from './Settings';
 import NotificationBell from './NotificationBell';
 import MyAssignedRequests from './MyAssignedRequests';
@@ -43,7 +44,8 @@ import {
     Menu,
     Inbox,
     Settings as SettingsIcon,
-    RefreshCw
+    RefreshCw,
+    Send
 } from 'lucide-react';
 import logo from '../assets/logo.svg';
 
@@ -230,6 +232,7 @@ const Dashboard = () => {
     const canManageUsers = checkPermission(user, 'CAN_MANAGE_USERS'); // Renamed used to check for admin only for user tab
     const canViewReports = checkPermission(user, 'CAN_VIEW_REPORTS');
     const canManageSales = checkPermission(user, 'CAN_MANAGE_SALES');
+    const canManageCampaigns = checkPermission(user, 'CAN_MANAGE_CAMPAIGNS');
 
     const normalizeString = (str) => {
         if (!str) return '';
@@ -271,6 +274,7 @@ const Dashboard = () => {
             { id: 'sales', label: 'Ventas', icon: <DollarSign size={18} /> },
             { id: 'converter', label: 'Convertidor', icon: <RefreshCw size={18} /> }
         ] : []),
+        ...(canManageCampaigns ? [{ id: 'campaigns', label: 'Campañas', icon: <Send size={18} /> }] : []),
         { id: 'settings', label: 'Ajustes', icon: <SettingsIcon size={18} /> },
     ];
 
@@ -601,7 +605,8 @@ const Dashboard = () => {
                                                             activeTab === 'operations' ? 'Operaciones' :
                                                                 activeTab === 'sales' ? 'Ventas y Cotizaciones' :
                                                                     activeTab === 'converter' ? 'Convertidor de Catálogos' :
-                                                                        'Panel Control'}
+                                                                        activeTab === 'campaigns' ? 'Marketing y Campañas' :
+                                                                            'Panel Control'}
                                 </h2>
                                 <p style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.8rem, 2vw, 1rem)' }}>Mesa de servicios corporativa - ELSPEC ANDINA.</p>
                             </div>
@@ -898,6 +903,9 @@ const Dashboard = () => {
 
                     {/* Catalog Converter */}
                     {activeTab === 'converter' && canManageSales && <CatalogConverter />}
+
+                    {/* Campaign Management */}
+                    {activeTab === 'campaigns' && canManageCampaigns && <CampaignManagement />}
 
                     {/* Settings Dashboard */}
                     {activeTab === 'settings' && <Settings user={user} />}
