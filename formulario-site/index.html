@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitud de Diagnóstico Gratuito | ELSPEC ANDINA</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #f0f2f5; font-family: Arial, Helvetica, sans-serif; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 30px 16px; }
+    .card { width: 100%; max-width: 680px; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.10); }
+    .header { background: linear-gradient(135deg,#1a237e 0%,#283593 60%,#1565c0 100%); padding: 25px 40px; text-align: center; }
+    .header img { height: 62px; margin-bottom: 10px; border-radius: 4px; display: block; margin-left: auto; margin-right: auto; }
+    .header h1 { color: #fff; font-size: 24px; letter-spacing: 1px; }
+    .header p { color: #90caf9; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; }
+    .body { padding: 35px 40px; }
+    .body h2 { color: #1a237e; font-size: 21px; margin-bottom: 6px; }
+    .body .sub { color: #555; font-size: 14px; margin-bottom: 28px; }
+    .row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .field { flex: 1; min-width: 220px; display: flex; flex-direction: column; }
+    label { font-size: 13px; font-weight: bold; color: #1a237e; margin-bottom: 5px; }
+    input, textarea, select { border: 1.5px solid #c5cae9; border-radius: 6px; padding: 10px 14px; font-size: 14px; color: #333; font-family: inherit; outline: none; transition: border-color .2s; width: 100%; }
+    input:focus, textarea:focus, select:focus { border-color: #1565c0; }
+    textarea { resize: vertical; height: 110px; }
+    .btn { width: 100%; padding: 14px; background: linear-gradient(135deg,#1565c0,#1a237e); color: #fff; border: none; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; letter-spacing: .5px; margin-top: 8px; transition: opacity .2s; }
+    .btn:hover { opacity: .9; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    .error { color: #c62828; background: #ffebee; padding: 10px 15px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
+    footer { background: #1a237e; padding: 18px 40px; text-align: center; color: #90caf9; font-size: 11px; }
+    footer p { margin: 3px 0; }
+    .success { padding: 50px 40px; text-align: center; }
+    .success .icon { font-size: 60px; margin-bottom: 16px; }
+    .success h2 { color: #1a237e; font-size: 24px; margin-bottom: 12px; }
+    .success p { color: #555; font-size: 15px; line-height: 1.7; max-width: 400px; margin: 0 auto; }
+    .success .brand { color: #1565c0; font-weight: bold; margin-top: 24px; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <img src="https://www.elspecandina.com.co/wp-content/uploads/2021/05/aw3.jpg" alt="ELSPEC ANDINA">
+    <h1>ELSPEC ANDINA</h1>
+    <p>Soluciones en Calidad de Energía Eléctrica</p>
+  </div>
+
+  <!-- SUCCESS STATE -->
+  <div class="success" id="success" style="display:none">
+    <div class="icon">✅</div>
+    <h2>¡Solicitud Recibida!</h2>
+    <p>Gracias por su interés. Nuestro equipo comercial estará en contacto con usted muy pronto. Recibirá una confirmación en su correo electrónico.</p>
+    <p class="brand">ELSPEC ANDINA S.A.S.</p>
+  </div>
+
+  <!-- FORM STATE -->
+  <div class="body" id="formContainer">
+    <h2>📋 Solicitud de Diagnóstico Gratuito</h2>
+    <p class="sub" id="sectorLabel"></p>
+
+    <div id="errorBox" class="error" style="display:none"></div>
+
+    <form id="contactForm">
+      <div class="row">
+        <div class="field">
+          <label>Nombre completo *</label>
+          <input name="nombre" required placeholder="Ej: Juan Rodríguez">
+        </div>
+        <div class="field">
+          <label>Empresa *</label>
+          <input name="empresa" required placeholder="Nombre de su empresa">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Correo electrónico *</label>
+          <input name="email" type="email" required placeholder="correo@empresa.com" id="emailField">
+        </div>
+        <div class="field">
+          <label>Teléfono / WhatsApp *</label>
+          <input name="telefono" required placeholder="+57 300 000 0000">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Cargo</label>
+          <input name="cargo" placeholder="Ej: Gerente de Operaciones">
+        </div>
+        <div class="field">
+          <label>Sector / Industria</label>
+          <input name="sector" id="sectorField" placeholder="Ej: Minería, Hospitales...">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1;min-width:100%">
+          <label>Descripción de su necesidad o reto eléctrico *</label>
+          <textarea name="descripcion" required placeholder="Describa brevemente el problema eléctrico que enfrenta, equipos involucrados, síntomas observados, etc."></textarea>
+        </div>
+      </div>
+
+      <input type="hidden" name="vendedorEmail" id="vendedorEmailField">
+      <input type="hidden" name="vendedorNombre" id="vendedorNombreField">
+
+      <button type="submit" class="btn" id="submitBtn">📤 Enviar Solicitud</button>
+    </form>
+  </div>
+
+  <footer>
+    <p>© 2025 ELSPEC ANDINA S.A.S. | Calidad de Energía para la Industria Colombiana</p>
+    <p>🌐 https://www.elspecandina.com.co/</p>
+  </footer>
+</div>
+
+<script>
+  // Pre-fill from URL params
+  const params = new URLSearchParams(window.location.search);
+  const email = params.get('email') || '';
+  const vendedor = params.get('vendedor') || '';
+  const vendedorNombre = params.get('vendedorNombre') || '';
+  const industry = params.get('industry') || params.get('sector') || '';
+
+  if (email) document.getElementById('emailField').value = email;
+  if (industry) {
+    document.getElementById('sectorField').value = industry;
+    document.getElementById('sectorLabel').textContent = 'Sector: ' + industry;
+  }
+  document.getElementById('vendedorEmailField').value = vendedor;
+  document.getElementById('vendedorNombreField').value = vendedorNombre;
+
+  // Form submit
+  document.getElementById('contactForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const errorBox = document.getElementById('errorBox');
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando...';
+    errorBox.style.display = 'none';
+
+    const formData = {};
+    new FormData(this).forEach((val, key) => { formData[key] = val; });
+
+    try {
+      await fetch('http://localhost:5678/webhook/elspec-contacto-form', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      document.getElementById('formContainer').style.display = 'none';
+      document.getElementById('success').style.display = 'block';
+    } catch {
+      errorBox.textContent = 'Hubo un problema al enviar. Por favor intenta de nuevo.';
+      errorBox.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = '📤 Enviar Solicitud';
+    }
+  });
+</script>
+</body>
+</html>

@@ -33,7 +33,7 @@ const SaleForm = ({ sale, onSave, onCancel }) => {
             tipoTransporte: 'NINGUNO',
             unidadTransporte: 'KG',
             tarifaCosto1: 0,
-            tarifaCosto1: 0,
+            tarifaCosto2: 0,
             aplicarSeguro: false,
             tasaSeguro: 0
         },

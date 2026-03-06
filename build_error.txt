@@ -1,0 +1,36 @@
+
+> sistema-tickets-elspec@0.0.0 build
+> vite build
+
+[36mvite v6.4.1 [32mbuilding for production...[36m[39m
+transforming...
+[33m[plugin vite:esbuild] src/components/SaleForm.jsx: [33mDuplicate key "tarifaCosto1" in object literal[33m
+34 |              unidadTransporte: 'KG',
+35 |              tarifaCosto1: 0,
+36 |              tarifaCosto1: 0,
+   |              ^
+37 |              aplicarSeguro: false,
+38 |              tasaSeguro: 0
+[39m
+[32m✓[39m 2020 modules transformed.
+[31m✗[39m Build failed in 5.24s
+[31merror during build:
+[31msrc/components/CampaignManagement.jsx (4:9): "db" is not exported by "src/services/db.js", imported by "src/components/CampaignManagement.jsx".[31m
+file: [36mC:/Users/gualg/OneDrive/Documentos/NUEVOS DESARROLLOS/sistema-de-gestion-elspec-2.0/src/components/CampaignManagement.jsx:4:9[31m
+[33m
+2: import { Send, Users, Plus, Trash2, Mail, Briefcase, FileSpreadsheet, AlertCircle, RefreshCw } from 'lucide-react';
+3: import useAuth from '../hooks/useAuth';
+4: import { db } from '../services/db';
+            ^
+5: import { ROLES } from '../config/roles';
+[31m
+    at getRollupError (file:///C:/Users/gualg/OneDrive/Documentos/NUEVOS%20DESARROLLOS/sistema-de-gestion-elspec-2.0/node_modules/rollup/dist/es/shared/parseAst.js:402:41)
+    at error (file:///C:/Users/gualg/OneDrive/Documentos/NUEVOS%20DESARROLLOS/sistema-de-gestion-elspec-2.0/node_modules/rollup/dist/es/shared/parseAst.js:398:42)
+    at Module.error (file:///C:/Users/gualg/OneDrive/Documentos/NUEVOS%20DESARROLLOS/sistema-de-gestion-elspec-2.0/node_modules/rollup/dist/es/shared/node-entry.js:17040:16)
+    at Module.traceVariable (file:///C:/Users/gualg/OneDrive/Documentos/NUEVOS%20DESARROLLOS/sistema-de-gestion-elspec-2.0/node_modules/rollup/dist/es/shared/node-entry.js:17452:29)
+    at ModuleScope.findVariable (file:///C:/Users/gualg/OneDrive/Documentos/NUEVOS%20DESARROLLOS/sistema-de-gestion-elspec-2.0/node_modules/rollup/dist/es/shared/node-entry.js:15070:39)
+    at ReturnValueScope.findVariable (file:///C:/Users/gualg/OneDrive/Documentos/NUEVOS%20DESARROLLOS/sistema-de-gestion-elspec-2.0/node_modules/rollup/dist/es/shared/node-entry.js:5673:38)
+    at FunctionBodyScope.findVariable (file:///C:/Users/gualg/OneDrive/Documentos/NUEVOS%20DESARROLLOS/sistema-de-gestion-elspec-2.0/node_modules/rollup/dist/es/shared/node-entry.js:5673:38)
+    at ReturnValueScope.findVariable (file:///C:/Users/gualg/OneDrive/Documentos/NUEVOS%20DESARROLLOS/sistema-de-gestion-elspec-2.0/node_modules/rollup/dist/es/shared/node-entry.js:5673:38)
+    at FunctionBodyScope.findVariable (file:///C:/Users/gualg/OneDrive/Documentos/NUEVOS%20DESARROLLOS/sistema-de-gestion-elspec-2.0/node_modules/rollup/dist/es/shared/node-entry.js:5673:38)
+    at BlockScope.findVariable (file:///C:/Users/gualg/OneDrive/Documentos/NUEVOS%20DESARROLLOS/sistema-de-gestion-elspec-2.0/node_modules/rollup/dist/es/shared/node-entry.js:5673:38)[39m
