@@ -1,0 +1,315 @@
+{
+    "name": "WhatsApp Ticket Bot — ELSPEC v1",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "whatsapp-ticket-bot",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "node-webhook",
+            "name": "Webhook Twilio",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                240,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// ─── PARSE INCOMING TWILIO WHATSAPP MESSAGE ───────────────────────────────\n// Twilio sends form-urlencoded data, N8N decodes it into $json\nconst body = $json.body || $json.Body || '';\nconst from = ($json.From || $json.from || '').replace('whatsapp:', '').trim();\nconst profileName = $json.ProfileName || $json.profileName || 'Usuario';\n\nif (!from) throw new Error('No se pudo obtener el número de teléfono del remitente.');\n\nreturn [{\n  json: {\n    phone: from,\n    message: body.trim().toLowerCase(),\n    messageRaw: body.trim(),\n    profileName: profileName\n  }\n}];"
+            },
+            "id": "node-parse",
+            "name": "Parsear Mensaje",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// ─── STATE MACHINE MANAGER ─────────────────────────────────────────────────\n// Uses N8N workflow static data to persist state per phone number.\n// staticData is a key-value store that survives between executions.\n\nconst phone = $json.phone;\nconst message = $json.message;\nconst messageRaw = $json.messageRaw;\nconst profileName = $json.profileName;\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.conversations) staticData.conversations = {};\n\n// Initialize conversation if new\nif (!staticData.conversations[phone]) {\n  staticData.conversations[phone] = { state: 'INICIO', data: {} };\n}\n\nconst conv = staticData.conversations[phone];\n\n// Keywords that restart the conversation\nconst RESTART_WORDS = ['hola', 'hi', 'hello', 'inicio', 'menu', 'menú', 'ticket', 'soporte', 'ayuda', 'help', 'start'];\nif (RESTART_WORDS.includes(message)) {\n  conv.state = 'INICIO';\n  conv.data = {};\n}\n\n// ─── TYPE MAP ────────────────────────────────────────────────────────────────\nconst TIPO_MAP = {\n  '1': 'Laptop', 'laptop': 'Laptop',\n  '2': 'Desktop', 'desktop': 'Desktop', 'pc': 'Desktop',\n  '3': 'Impresora', 'impresora': 'Impresora', 'printer': 'Impresora',\n  '4': 'Red', 'red': 'Red', 'router': 'Red', 'switch': 'Red', 'wifi': 'Red',\n  '5': 'Otro', 'otro': 'Otro', 'otros': 'Otro', 'other': 'Otro'\n};\n\n// ─── PRIORITY MAP ────────────────────────────────────────────────────────────\nconst PRIORITY_MAP = {\n  '1': 'low', 'baja': 'low', 'bajo': 'low',\n  '2': 'medium', 'media': 'medium', 'medio': 'medium', 'normal': 'medium',\n  '3': 'high', 'alta': 'high', 'alto': 'high', 'urgente': 'high', 'urgent': 'high'\n};\n\nlet action = '';\nlet responseMessage = '';\nlet ticketData = null;\n\n// ─── STATE TRANSITIONS ──────────────────────────────────────────────────────\nswitch (conv.state) {\n  case 'INICIO':\n    conv.state = 'WAIT_TIPO';\n    action = 'SEND_MESSAGE';\n    responseMessage =\n      `👋 Hola *${profileName}*! Soy el asistente de soporte de *ELSPEC ANDINA*.\\n\\n` +\n      `📋 ¿Qué tipo de equipo necesitas reportar?\\n\\n` +\n      `1️⃣ Laptop\\n` +\n      `2️⃣ Desktop / PC\\n` +\n      `3️⃣ Impresora\\n` +\n      `4️⃣ Red (Router / Switch)\\n` +\n      `5️⃣ Otro\\n\\n` +\n      `_Responde con el número o el nombre del equipo._`;\n    break;\n\n  case 'WAIT_TIPO':\n    const tipo = TIPO_MAP[message];\n    if (!tipo) {\n      action = 'SEND_MESSAGE';\n      responseMessage =\n        `❓ No reconocí esa opción. Por favor responde con:\\n\\n` +\n        `1️⃣ Laptop  2️⃣ Desktop  3️⃣ Impresora  4️⃣ Red  5️⃣ Otro`;\n      break;\n    }\n    conv.data.tipo = tipo;\n    conv.state = 'WAIT_SERIAL';\n    action = 'SEND_MESSAGE';\n    responseMessage =\n      `🖥️ *${tipo}* registrado.\\n\\n` +\n      `🔍 ¿Cuál es el número de *serial* o *nombre* del equipo?\\n` +\n      `_(Si no lo sabes, escribe *no sé*)_`;\n    break;\n\n  case 'WAIT_SERIAL':\n    conv.data.serial = messageRaw === 'no sé' || messageRaw === 'no se' || messageRaw === 'ns'\n      ? 'No especificado'\n      : messageRaw;\n    conv.state = 'WAIT_DESC';\n    action = 'SEND_MESSAGE';\n    responseMessage =\n      `📝 Perfecto. Ahora *describe el problema* con el equipo:\\n\\n` +\n      `_Ej: No enciende, pantalla negra, hace ruido extraño..._`;\n    break;\n\n  case 'WAIT_DESC':\n    if (messageRaw.length < 5) {\n      action = 'SEND_MESSAGE';\n      responseMessage = `⚠️ Por favor escribe una descripción más detallada del problema.`;\n      break;\n    }\n    conv.data.descripcion = messageRaw;\n    conv.state = 'WAIT_PRIORITY';\n    action = 'SEND_MESSAGE';\n    responseMessage =\n      `🚦 ¿Qué tan *urgente* es el problema?\\n\\n` +\n      `1️⃣ *Baja* — Puede esperar un par de días\\n` +\n      `2️⃣ *Media* — Afecta el trabajo pero hay solución temporal\\n` +\n      `3️⃣ *Alta* — Está bloqueando completamente el trabajo`;\n    break;\n\n  case 'WAIT_PRIORITY':\n    const priority = PRIORITY_MAP[message];\n    if (!priority) {\n      action = 'SEND_MESSAGE';\n      responseMessage =\n        `❓ Opción no reconocida. Responde *1* (Baja), *2* (Media) o *3* (Alta).`;\n      break;\n    }\n    conv.data.priority = priority;\n\n    // ✅ All data collected — Create the ticket\n    action = 'CREATE_TICKET';\n    const now = new Date().toISOString();\n    ticketData = {\n      title: `[WhatsApp] Daño en equipo: ${conv.data.tipo} — ${conv.data.serial}`,\n      description: `Reporte via WhatsApp de ${profileName} (+${phone.replace('+', '')}):\\n\\n${conv.data.descripcion}`,\n      type: 'soporte',\n      priority: conv.data.priority,\n      author: 'WhatsApp Bot',\n      status: 'open',\n      deleted: false,\n      assignedTo: [],\n      assetId: null,\n      whatsappPhone: phone,\n      whatsappName: profileName,\n      equipoTipo: conv.data.tipo,\n      equipoSerial: conv.data.serial,\n      createdAt: now\n    };\n\n    // Clear conversation state after ticket creation\n    delete staticData.conversations[phone];\n    break;\n\n  default:\n    conv.state = 'INICIO';\n    action = 'SEND_MESSAGE';\n    responseMessage = `Escribe *hola* para iniciar un nuevo reporte de soporte. 👋`;\n    break;\n}\n\nreturn [{\n  json: {\n    phone,\n    profileName,\n    action,\n    responseMessage: responseMessage || '',\n    ticketData: ticketData || null\n  }\n}];"
+            },
+            "id": "node-state-manager",
+            "name": "Manejador de Estado",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "dataType": "string",
+                "value1": "={{ $json.action }}",
+                "rules": {
+                    "rules": [
+                        {
+                            "value2": "SEND_MESSAGE"
+                        },
+                        {
+                            "value2": "CREATE_TICKET"
+                        }
+                    ]
+                }
+            },
+            "id": "node-switch",
+            "name": "Switch Acción",
+            "type": "n8n-nodes-base.switch",
+            "typeVersion": 1,
+            "position": [
+                900,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://api.twilio.com/2010-04-01/Accounts/{{ $credentials.accountSid }}/Messages.json",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "twilioApi",
+                "sendBody": true,
+                "contentType": "form-urlencoded",
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "From",
+                            "value": "={{ 'whatsapp:' + $env.TWILIO_WHATSAPP_NUMBER }}"
+                        },
+                        {
+                            "name": "To",
+                            "value": "={{ 'whatsapp:' + $json.phone }}"
+                        },
+                        {
+                            "name": "Body",
+                            "value": "={{ $json.responseMessage }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "node-send-whatsapp",
+            "name": "Enviar WhatsApp",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                1120,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://firestore.googleapis.com/v1/projects/{{ $env.FIREBASE_PROJECT_ID }}/databases/(default)/documents/tickets",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "googleApi",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"fields\": {\n    \"title\": { \"stringValue\": {{ JSON.stringify($json.ticketData.title) }} },\n    \"description\": { \"stringValue\": {{ JSON.stringify($json.ticketData.description) }} },\n    \"type\": { \"stringValue\": \"soporte\" },\n    \"priority\": { \"stringValue\": {{ JSON.stringify($json.ticketData.priority) }} },\n    \"author\": { \"stringValue\": \"WhatsApp Bot\" },\n    \"status\": { \"stringValue\": \"open\" },\n    \"deleted\": { \"booleanValue\": false },\n    \"assignedTo\": { \"arrayValue\": { \"values\": [] } },\n    \"whatsappPhone\": { \"stringValue\": {{ JSON.stringify($json.ticketData.whatsappPhone) }} },\n    \"whatsappName\": { \"stringValue\": {{ JSON.stringify($json.ticketData.whatsappName) }} },\n    \"equipoTipo\": { \"stringValue\": {{ JSON.stringify($json.ticketData.equipoTipo) }} },\n    \"equipoSerial\": { \"stringValue\": {{ JSON.stringify($json.ticketData.equipoSerial) }} },\n    \"createdAt\": { \"timestampValue\": {{ JSON.stringify($json.ticketData.createdAt) }} }\n  }\n}",
+                "options": {}
+            },
+            "id": "node-create-firestore",
+            "name": "Crear Ticket en Firestore",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                1120,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract the Firestore document ID from the response\nconst firestoreResponse = $input.first().json;\nconst docName = firestoreResponse.name || '';\n// name format: projects/{project}/databases/{db}/documents/tickets/{ID}\nconst docId = docName.split('/').pop() || 'NUEVO';\nconst shortId = docId.slice(-6).toUpperCase();\n\n// The ticket data comes through from previous node via the input chain\n// We need to get the phone from the response — fetch from firestoreResponse fields\nconst phone = firestoreResponse.fields?.whatsappPhone?.stringValue || '';\n\nreturn [{\n  json: {\n    phone,\n    shortId,\n    responseMessage:\n      `✅ *¡Ticket creado exitosamente!*\\n\\n` +\n      `🎫 Número de caso: *#${shortId}*\\n\\n` +\n      `El equipo de soporte técnico de ELSPEC ANDINA revisará tu solicitud pronto.\\n` +\n      `Si necesitas reportar otro problema, escribe *hola* nuevamente. 😊`\n  }\n}];"
+            },
+            "id": "node-prepare-confirm",
+            "name": "Preparar Confirmación",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1340,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://api.twilio.com/2010-04-01/Accounts/{{ $credentials.accountSid }}/Messages.json",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "twilioApi",
+                "sendBody": true,
+                "contentType": "form-urlencoded",
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "From",
+                            "value": "={{ 'whatsapp:' + $env.TWILIO_WHATSAPP_NUMBER }}"
+                        },
+                        {
+                            "name": "To",
+                            "value": "={{ 'whatsapp:' + $json.phone }}"
+                        },
+                        {
+                            "name": "Body",
+                            "value": "={{ $json.responseMessage }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "node-send-confirm",
+            "name": "Enviar Confirmación WhatsApp",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                1560,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "text",
+                "responseBody": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response></Response>",
+                "options": {
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "text/xml"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "node-respond-webhook",
+            "name": "Responder Webhook (200 OK)",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1120,
+                520
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook Twilio": {
+            "main": [
+                [
+                    {
+                        "node": "Parsear Mensaje",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Parsear Mensaje": {
+            "main": [
+                [
+                    {
+                        "node": "Manejador de Estado",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Manejador de Estado": {
+            "main": [
+                [
+                    {
+                        "node": "Switch Acción",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Switch Acción": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar WhatsApp",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Crear Ticket en Firestore",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Enviar WhatsApp": {
+            "main": [
+                [
+                    {
+                        "node": "Responder Webhook (200 OK)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Crear Ticket en Firestore": {
+            "main": [
+                [
+                    {
+                        "node": "Preparar Confirmación",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Preparar Confirmación": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar Confirmación WhatsApp",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Enviar Confirmación WhatsApp": {
+            "main": [
+                [
+                    {
+                        "node": "Responder Webhook (200 OK)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1",
+        "saveManualExecutions": true,
+        "saveExecutionProgress": true,
+        "errorWorkflow": ""
+    },
+    "meta": {
+        "description": "Bot de WhatsApp para creación automática de tickets de soporte en ELSPEC ANDINA. Usa Twilio WhatsApp Sandbox y escribe directamente en Firebase Firestore con autenticación Google Service Account. Mantiene estado de conversación por número de teléfono usando N8N Static Data.",
+        "version": "1.0.0"
+    }
+}
