@@ -32,8 +32,8 @@ export const PERMISSIONS = {
     CAN_VIEW_OWN_TICKETS: Object.values(ROLES), // Everyone
     CAN_CREATE_TICKETS: Object.values(ROLES),   // Everyone
 
-    // Reports
-    CAN_VIEW_REPORTS: [ROLES.ADMIN, ROLES.LIDER_VENTAS],
+    // Reports & Analytics
+    CAN_VIEW_REPORTS: Object.values(ROLES),
 
     // Sales Module
     CAN_MANAGE_SALES: [ROLES.ADMIN, ROLES.VENTAS, ROLES.LIDER_VENTAS, ROLES.LOGISTICA],

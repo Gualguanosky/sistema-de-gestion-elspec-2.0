@@ -58,20 +58,38 @@ const OperationsSchedule = () => {
         ['sgi', 'operaciones', 'technician', 'operator'].includes(u.role)
     );
 
+    // ── Google Calendar Sync (silencioso — no bloquea el flujo) ──────
+    const syncWithGoogleCalendar = async (visitData, action = 'create') => {
+        const webhookUrl = import.meta.env.VITE_N8N_CALENDAR_WEBHOOK;
+        if (!webhookUrl) return;
+        try {
+            await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...visitData, action })
+            });
+            console.log('📅 Visita sincronizada con Google Calendar');
+        } catch (err) {
+            console.warn('⚠️ Google Calendar sync falló (no crítico):', err.message);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             if (editingVisit) {
                 await db.updateVisit(editingVisit.id, newVisit);
+                syncWithGoogleCalendar({ ...newVisit, id: editingVisit.id, createdBy: user.username }, 'update');
             } else {
-                await db.addVisit({
+                const savedVisit = await db.addVisit({
                     ...newVisit,
                     createdBy: user.username
                 });
+                syncWithGoogleCalendar({ ...newVisit, id: savedVisit?.id, createdBy: user.username }, 'create');
             }
             setIsModalOpen(false);
             setEditingVisit(null);
-            setNewVisit({ date: '', location: '', client: '', description: '', personnel: '', status: 'scheduled' });
+            setNewVisit({ date: '', location: '', client: '', description: '', personnel: [], status: 'scheduled', type: 'Medición', linkedIndicatorId: '' });
         } catch (error) {
             console.error("Error saving visit:", error);
             alert("Error al guardar la visita.");

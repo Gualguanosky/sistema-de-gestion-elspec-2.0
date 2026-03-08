@@ -13,6 +13,7 @@ import SalesManagement from './SalesManagement';
 import CatalogConverter from './CatalogConverter';
 import CampaignManagement from './CampaignManagement';
 import Settings from './Settings';
+import AnalyticsDashboard from './AnalyticsDashboard';
 import NotificationBell from './NotificationBell';
 import MyAssignedRequests from './MyAssignedRequests';
 import { ROLES, PERMISSIONS, checkPermission } from '../config/roles'; // Import Permissions
@@ -45,7 +46,8 @@ import {
     Inbox,
     Settings as SettingsIcon,
     RefreshCw,
-    Send
+    Send,
+    BarChart2
 } from 'lucide-react';
 import logo from '../assets/logo.svg';
 
@@ -608,7 +610,7 @@ const Dashboard = () => {
                                                                         activeTab === 'campaigns' ? 'Marketing y Campañas' :
                                                                             'Panel Control'}
                                 </h2>
-                                <p style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.8rem, 2vw, 1rem)' }}>Mesa de servicios corporativa - ELSPEC ANDINA.</p>
+                                <p style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.8rem, 2vw, 1rem)' }}>Mesa de servicios corporativa - ELSPEC ANDINA v2.1</p>
                             </div>
                         </div>
                     </header>
@@ -832,7 +834,6 @@ const Dashboard = () => {
                                         </div>
                                     </div>
                                 )}
-
                                 {canManageSGI && (
                                     <div
                                         onClick={() => setActiveTab('sgi')}
@@ -865,6 +866,13 @@ const Dashboard = () => {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Analytics Section Integrated directly into Home */}
+                            {canViewReports && (
+                                <div style={{ marginTop: '40px', paddingBottom: '20px' }} className="animate-slide-up">
+                                    <AnalyticsDashboard />
+                                </div>
+                            )}
                         </div>
                     )}
 

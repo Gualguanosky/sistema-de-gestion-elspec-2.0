@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Users, Plus, Trash2, Mail, Briefcase, FileSpreadsheet, AlertCircle, RefreshCw } from 'lucide-react';
+import { Send, Users, Plus, Trash2, Mail, Briefcase, FileSpreadsheet, AlertCircle, RefreshCw, BarChart2 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import db from '../services/db';
 import { ROLES } from '../config/roles';
+import CampaignAnalytics from './CampaignAnalytics';
 
 const CampaignManagement = () => {
     const { user } = useAuth();
@@ -13,6 +14,7 @@ const CampaignManagement = () => {
     const [emails, setEmails] = useState([]);
     const [newEmail, setNewEmail] = useState('');
     const [newIndustry, setNewIndustry] = useState('');
+    const [newName, setNewName] = useState('');
     const [bulkEmails, setBulkEmails] = useState('');
     const [status, setStatus] = useState({ type: '', message: '' });
     const [isSending, setIsSending] = useState(false);
@@ -58,9 +60,14 @@ const CampaignManagement = () => {
         e.preventDefault();
         if (!newEmail.trim() || !newIndustry.trim()) return;
 
-        setEmails([...emails, { email: newEmail.trim(), industry: newIndustry.trim() }]);
+        setEmails([...emails, {
+            email: newEmail.trim(),
+            industry: newIndustry.trim(),
+            name: newName.trim() || ''
+        }]);
         setNewEmail('');
         setNewIndustry('');
+        setNewName('');
     };
 
     const handleRemoveEmail = (indexToRemove) => {
@@ -68,7 +75,7 @@ const CampaignManagement = () => {
     };
 
     const handleBulkAdd = () => {
-        // Expected format: email@example.com, Industry Name
+        // Expected format: email@example.com, Industry Name, Contact Name (Optional)
         const lines = bulkEmails.split('\n');
         const added = [];
         let errors = 0;
@@ -77,9 +84,11 @@ const CampaignManagement = () => {
             const parts = line.split(',');
             if (parts.length >= 2) {
                 const email = parts[0].trim();
-                const industry = parts.slice(1).join(',').trim(); // keep remaining parts as industry
+                const industry = parts[1].trim();
+                const name = parts.length >= 3 ? parts.slice(2).join(',').trim() : '';
+
                 if (email && industry) {
-                    added.push({ email, industry });
+                    added.push({ email, industry, name });
                 } else {
                     errors++;
                 }
@@ -142,6 +151,13 @@ const CampaignManagement = () => {
                 senderEmail: sellerObj.email,
                 contacts: emails
             };
+
+            // 1. Guardar Historial en Firebase Local
+            await db.saveCampaign({
+                ...payload,
+                status: 'started',
+                contactsCount: emails.length
+            });
 
             console.log("Enviando Webhook a N8N con payload:", payload);
 
@@ -218,6 +234,25 @@ const CampaignManagement = () => {
                     }}
                 >
                     <Users size={16} /> Vendedores ({salespeople.length})
+                </button>
+                <button
+                    onClick={() => setMainTab('analytics')}
+                    style={{
+                        padding: '10px 20px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: mainTab === 'analytics' ? 'var(--primary)' : 'var(--text-muted)',
+                        borderBottom: mainTab === 'analytics' ? '2px solid var(--primary)' : '2px solid transparent',
+                        cursor: 'pointer',
+                        fontSize: '1rem',
+                        fontWeight: mainTab === 'analytics' ? 'bold' : 'normal',
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}
+                >
+                    <BarChart2 size={16} /> Analytics
                 </button>
             </div>
 
@@ -386,25 +421,35 @@ const CampaignManagement = () => {
                                     />
                                 </div>
                                 <div className="input-group" style={{ flex: '1 1 200px', marginBottom: 0 }}>
-                                    <label><Briefcase size={14} style={{ display: 'inline', marginRight: '5px' }} /> Industria / Perfil</label>
+                                    <label><Briefcase size={14} style={{ display: 'inline', marginRight: '5px' }} /> Industria / Perfil *</label>
                                     <input
                                         type="text"
                                         placeholder="Ej. Minería, Hospitales, Textil..."
                                         value={newIndustry}
                                         onChange={(e) => setNewIndustry(e.target.value)}
+                                        required
                                     />
                                 </div>
-                                <button type="submit" className="btn-primary" style={{ height: '42px', padding: '0 20px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <div className="input-group" style={{ flex: '1 1 200px', marginBottom: 0 }}>
+                                    <label><Users size={14} style={{ display: 'inline', marginRight: '5px' }} /> Nombre Contacto (Opcional)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Ej. Juan Pérez"
+                                        value={newName}
+                                        onChange={(e) => setNewName(e.target.value)}
+                                    />
+                                </div>
+                                <button type="submit" className="btn-primary" style={{ height: '42px', padding: '0 20px', display: 'flex', alignItems: 'center', gap: '5px', alignSelf: 'flex-end' }}>
                                     <Plus size={18} /> Agregar
                                 </button>
                             </form>
                         ) : (
                             <div style={{ marginBottom: '25px' }}>
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
-                                    Pega una lista separada por comas. Formato: <strong>correo, industria</strong> (Un registro por línea).
+                                    Pega una lista separada por comas. Formato: <strong>correo, industria, nombre (opcional)</strong>
                                     <br />Ejemplo:<br />
                                     <code style={{ background: 'rgba(0,0,0,0.3)', padding: '5px', display: 'block', marginTop: '5px', borderRadius: '5px' }}>
-                                        gerente@textiles.com, Industria Textil<br />
+                                        gerente@textiles.com, Industria Textil, María Gómez<br />
                                         compras@hmhospital.com, Sector Salud
                                     </code>
                                 </p>
@@ -426,6 +471,7 @@ const CampaignManagement = () => {
                                     <thead>
                                         <tr style={{ background: 'rgba(255,255,255,0.05)', textAlign: 'left' }}>
                                             <th style={{ padding: '12px 15px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Correo</th>
+                                            <th style={{ padding: '12px 15px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Nombre Contacto</th>
                                             <th style={{ padding: '12px 15px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Industria / Contexto</th>
                                             <th style={{ padding: '12px 15px', borderBottom: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', width: '80px' }}>Acción</th>
                                         </tr>
@@ -434,6 +480,7 @@ const CampaignManagement = () => {
                                         {emails.map((item, index) => (
                                             <tr key={index} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                                 <td style={{ padding: '10px 15px' }}>{item.email}</td>
+                                                <td style={{ padding: '10px 15px', color: item.name ? 'white' : 'var(--text-muted)' }}>{item.name || '-'}</td>
                                                 <td style={{ padding: '10px 15px', color: 'var(--text-muted)' }}>{item.industry}</td>
                                                 <td style={{ padding: '10px 15px', textAlign: 'center' }}>
                                                     <button
@@ -549,6 +596,8 @@ const CampaignManagement = () => {
                     )}
                 </div>
             )}
+
+            {mainTab === 'analytics' && <CampaignAnalytics />}
         </div>
     );
 };

@@ -1,0 +1,125 @@
+{
+    "name": "ELSPEC — Google Calendar Sync Visitas",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "gc-visit-sync",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "webhook-gc-01",
+            "name": "Webhook Visita",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                240,
+                300
+            ],
+            "webhookId": "gc-visit-sync"
+        },
+        {
+            "parameters": {
+                "jsCode": "const body = $json.body || $json;\nconst {\n  id = '',\n  date,\n  location = '',\n  client = '',\n  description = '',\n  personnel = '',\n  status = 'scheduled',\n  createdBy = 'ELSPEC System',\n  action = 'create'\n} = body;\n\nif (!date || !client) {\n  throw new Error('Faltan campos requeridos: date, client');\n}\n\n// Parse date — expected format YYYY-MM-DD\nconst startDateTime = `${date}T08:00:00`;\nconst endDateTime   = `${date}T10:00:00`;\n\nconst statusEmoji = {\n  scheduled: '📅',\n  in_progress: '🔧',\n  completed: '✅',\n  cancelled: '❌'\n}[status] || '📅';\n\nreturn [{\n  json: {\n    id,\n    action,\n    title: `${statusEmoji} Visita ELSPEC — ${client}`,\n    startDateTime,\n    endDateTime,\n    location,\n    description: `${description}\\n\\n👤 Responsable: ${personnel || 'Sin asignar'}\\n📝 Creado por: ${createdBy}\\n🆔 ID Visita: ${id}`,\n    colorId: '11'\n  }\n}];\n"
+            },
+            "id": "code-gc-02",
+            "name": "Preparar Evento",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "create",
+                "calendar": {
+                    "__rl": true,
+                    "value": "primary",
+                    "mode": "list",
+                    "cachedResultName": "primary"
+                },
+                "start": "={{ $json.startDateTime }}",
+                "end": "={{ $json.endDateTime }}",
+                "additionalFields": {
+                    "summary": "={{ $json.title }}",
+                    "location": "={{ $json.location }}",
+                    "description": "={{ $json.description }}",
+                    "colorId": "={{ $json.colorId }}"
+                }
+            },
+            "id": "gcal-03",
+            "name": "Crear Evento Google Calendar",
+            "type": "n8n-nodes-base.googleCalendar",
+            "typeVersion": 1,
+            "position": [
+                680,
+                300
+            ],
+            "credentials": {
+                "googleCalendarOAuth2Api": {
+                    "id": "google-cal-cred",
+                    "name": "Google Calendar ELSPEC"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({ success: true, eventId: $json.id, message: 'Evento creado en Google Calendar' }) }}",
+                "options": {}
+            },
+            "id": "respond-gc-04",
+            "name": "Responder 200 OK",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                900,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook Visita": {
+            "main": [
+                [
+                    {
+                        "node": "Preparar Evento",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Preparar Evento": {
+            "main": [
+                [
+                    {
+                        "node": "Crear Evento Google Calendar",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Crear Evento Google Calendar": {
+            "main": [
+                [
+                    {
+                        "node": "Responder 200 OK",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "meta": {
+        "templateCredsSetupCompleted": false
+    }
+}

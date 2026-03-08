@@ -42,7 +42,8 @@ const COLLECTIONS = {
     CONFIGURACION_GLOBAL: 'configuracionGlobal',
     PRODUCTS: 'products',
     NOTIFICATIONS: 'notifications',
-    TERMINOS_CONDICIONES: 'terminos_condiciones'
+    TERMINOS_CONDICIONES: 'terminos_condiciones',
+    CAMPAIGNS: 'campaigns'
 };
 
 const db = {
@@ -889,6 +890,34 @@ const db = {
     deleteTerm: async (termId) => {
         const docRef = doc(db_firestore, COLLECTIONS.TERMINOS_CONDICIONES, termId);
         await deleteDoc(docRef);
+    },
+
+    // --- CAMPAIGNS ---
+    saveCampaign: async (campaignData) => {
+        try {
+            const docRef = await addDoc(collection(db_firestore, COLLECTIONS.CAMPAIGNS), {
+                ...campaignData,
+                timestamp: new Date().toISOString()
+            });
+            return { id: docRef.id, ...campaignData };
+        } catch (e) {
+            console.error("Error saving campaign to history:", e);
+            throw e;
+        }
+    },
+
+    getCampaigns: async () => {
+        try {
+            const q = query(collection(db_firestore, COLLECTIONS.CAMPAIGNS), orderBy("timestamp", "desc"));
+            const querySnapshot = await getDocs(q);
+            return querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+        } catch (e) {
+            console.error("Error getting campaigns history:", e);
+            return [];
+        }
     }
 };
 
