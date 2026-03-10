@@ -11,6 +11,7 @@ import autoTable from 'jspdf-autotable';
 import logoImg from '../assets/logo.png';
 import { TIPOS_OFERTA, OBTENER_TERMINOS, TERMINOS_EXHAUSTIVOS } from '../utils/termsAndConditions';
 import PricingVariables from './PricingVariables';
+import CatalogConverter from './CatalogConverter';
 
 const SalesManagement = () => {
     const { user } = useAuth();
@@ -18,7 +19,7 @@ const SalesManagement = () => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingSale, setEditingSale] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeSubTab, setActiveSubTab] = useState('list'); // 'list', 'catalog', 'customers', 'terms'
+    const [activeSubTab, setActiveSubTab] = useState('list'); // 'list', 'catalog', 'customers', 'terms', 'pricing', 'converter'
     const [dbTerms, setDbTerms] = useState([]);
 
     useEffect(() => {
@@ -52,6 +53,30 @@ const SalesManagement = () => {
                 type: 'sale_created',
                 saleId: newSale.id
             });
+
+            // Enviar datos vía Webhook a N8N
+            try {
+                const webhookUrl = import.meta.env.VITE_N8N_SALES_WEBHOOK || 'https://hook.us2.make.com/n8n-ventas-placeholder';
+                console.log("Enviando venta a N8N...", newSale);
+                
+                // Realizamos el envío de forma asíncrona sin bloquear la UI
+                fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        event: 'sale_created',
+                        sale: newSale,
+                    })
+                }).then(res => {
+                    if (!res.ok) console.warn("N8N Webhook warning:", res.statusText);
+                }).catch(err => {
+                    console.error("Error enviando datos a N8N:", err);
+                });
+            } catch (error) {
+                console.error("Excepción asíncrona enviando a N8N:", error);
+            }
         }
         setIsFormOpen(false);
         setEditingSale(null);
@@ -343,6 +368,15 @@ const SalesManagement = () => {
                 >
                     Variables de Cotización
                 </button>
+                <button
+                    onClick={() => setActiveSubTab('converter')}
+                    style={{
+                        padding: '10px 20px', background: 'transparent', border: 'none', color: activeSubTab === 'converter' ? 'var(--primary)' : 'var(--text-muted)',
+                        borderBottom: activeSubTab === 'converter' ? '2px solid var(--primary)' : 'none', fontWeight: 'bold'
+                    }}
+                >
+                    Convertidor
+                </button>
             </div>
 
             {activeSubTab === 'catalog' ? (
@@ -353,6 +387,8 @@ const SalesManagement = () => {
                 <TermsManagement />
             ) : activeSubTab === 'pricing' ? (
                 <PricingVariables />
+            ) : activeSubTab === 'converter' ? (
+                <CatalogConverter />
             ) : (
                 <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>

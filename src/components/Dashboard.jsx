@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import useTickets from '../hooks/useTickets';
 import useAuth from '../hooks/useAuth';
 import useComputers from '../hooks/useComputers';
@@ -10,7 +10,6 @@ import UserAssetsView from './UserAssetsView';
 import SGIUnifiedView from './SGIUnifiedView';
 import OperationsSchedule from './OperationsSchedule';
 import SalesManagement from './SalesManagement';
-import CatalogConverter from './CatalogConverter';
 import CampaignManagement from './CampaignManagement';
 import Settings from './Settings';
 import AnalyticsDashboard from './AnalyticsDashboard';
@@ -47,6 +46,7 @@ import {
     Settings as SettingsIcon,
     RefreshCw,
     Send,
+    Sparkles,
     BarChart2
 } from 'lucide-react';
 import logo from '../assets/logo.svg';
@@ -273,10 +273,11 @@ const Dashboard = () => {
         ...(canViewOperations ? [{ id: 'operations', label: 'Operaciones', icon: <Activity size={18} /> }] : []),
         ...(canManageSGI ? [{ id: 'sgi', label: 'Calidad', icon: <ShieldCheck size={18} /> }] : []),
         ...(canManageSales ? [
-            { id: 'sales', label: 'Ventas', icon: <DollarSign size={18} /> },
-            { id: 'converter', label: 'Convertidor', icon: <RefreshCw size={18} /> }
+            { id: 'sales', label: 'Ventas', icon: <DollarSign size={18} /> }
         ] : []),
-        ...(canManageCampaigns ? [{ id: 'campaigns', label: 'Campañas', icon: <Send size={18} /> }] : []),
+        ...(canManageCampaigns ? [
+            { id: 'campaigns', label: 'Campañas', icon: <Send size={18} /> }
+        ] : []),
         { id: 'settings', label: 'Ajustes', icon: <SettingsIcon size={18} /> },
     ];
 
@@ -334,7 +335,14 @@ const Dashboard = () => {
                     zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center',
                     padding: '20px'
                 }}>
-                    <div className="glass-card" style={{ padding: 'clamp(20px, 5vw, 40px)', width: '100%', maxWidth: '600px', border: '1px solid var(--primary)', maxHeight: '90vh', overflowY: 'auto' }}>
+                    <div className="glass-card animate-premium" style={{ 
+                        padding: 'clamp(20px, 5vw, 40px)', 
+                        width: 'min(95%, 650px)', 
+                        border: '1px solid var(--primary)', 
+                        maxHeight: '90vh', 
+                        overflowY: 'auto',
+                        position: 'relative'
+                    }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <PlusCircle color="var(--primary)" size={32} /> Nueva Solicitud
@@ -605,10 +613,9 @@ const Dashboard = () => {
                                                     activeTab === 'maintenance' ? 'Mantenimiento' :
                                                         activeTab === 'sgi' ? 'Calidad (SGI)' :
                                                             activeTab === 'operations' ? 'Operaciones' :
-                                                                activeTab === 'sales' ? 'Ventas y Cotizaciones' :
-                                                                    activeTab === 'converter' ? 'Convertidor de Catálogos' :
+                                                                    activeTab === 'sales' ? 'Ventas y Cotizaciones' :
                                                                         activeTab === 'campaigns' ? 'Marketing y Campañas' :
-                                                                            'Panel Control'}
+                                                                                'Panel Control'}
                                 </h2>
                                 <p style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.8rem, 2vw, 1rem)' }}>Mesa de servicios corporativa - ELSPEC ANDINA v2.1</p>
                             </div>
@@ -628,7 +635,7 @@ const Dashboard = () => {
                             </div>
 
                             {/* Quick Stats Row */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '30px' }}>
+                            <div className="kpi-grid" style={{ marginBottom: '30px' }}>
                                 <div
                                     onClick={() => setActiveTab('assigned')}
                                     className="glass-card"
@@ -908,9 +915,6 @@ const Dashboard = () => {
 
                     {/* Sales Dashboard */}
                     {activeTab === 'sales' && canManageSales && <SalesManagement />}
-
-                    {/* Catalog Converter */}
-                    {activeTab === 'converter' && canManageSales && <CatalogConverter />}
 
                     {/* Campaign Management */}
                     {activeTab === 'campaigns' && canManageCampaigns && <CampaignManagement />}

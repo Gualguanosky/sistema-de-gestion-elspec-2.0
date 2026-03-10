@@ -1,18 +1,20 @@
 :root {
   --primary: #006ce0;
   --primary-hover: #0056b3;
+  --primary-light: rgba(0, 108, 224, 0.1);
   --bg-dark: #0f172a;
   --bg-card: rgba(30, 41, 59, 0.7);
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --border-color: rgba(255, 255, 255, 0.1);
   --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-blur: blur(12px);
+  --glass-blur: blur(16px);
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   --shadow-premium: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 4px 12px -5px rgba(0, 0, 0, 0.4);
+  --accent-gradient: linear-gradient(135deg, #006ce0 0%, #3b82f6 100%);
 }
 
 * {
@@ -245,8 +247,20 @@ select option {
 .kpi-grid,
 .process-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 20px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 25px;
+}
+
+@media (max-width: 480px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Responsive Utilities */

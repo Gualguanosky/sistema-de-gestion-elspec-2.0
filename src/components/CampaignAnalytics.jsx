@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    AreaChart, Area, PieChart, Pie, Cell, LineChart, Line
+    AreaChart, Area, PieChart, Pie, Cell
 } from 'recharts';
-import { Send, MousePointerClick, MailOpen, AlertTriangle, TrendingUp, Users, Calendar } from 'lucide-react';
+import { Send, MousePointerClick, MailOpen, TrendingUp, Users, Calendar, AlertCircle } from 'lucide-react';
 import db from '../services/db';
 
 const CampaignAnalytics = () => {
@@ -11,53 +11,115 @@ const CampaignAnalytics = () => {
     const [totalSent, setTotalSent] = useState(0);
     const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' or 'history'
 
+    // Real Data State
+    const [funnelData, setFunnelData] = useState([]);
+    const [aiPerformance, setAiPerformance] = useState([]);
+    const [kpiCards, setKpiCards] = useState({ openRate: 0, clickRate: 0, convRate: 0 });
+    const [monthlyTrends, setMonthlyTrends] = useState([]);
+    const [industryPerformance, setIndustryPerformance] = useState([]);
+
+    const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
+
     useEffect(() => {
         const fetchCampaigns = async () => {
             const data = await db.getCampaigns();
             setHistory(data);
 
-            // Calcular totales
-            let sent = 0;
+            // Calcular totales y KPIs
+            let sentTotal = 0;
+            let deliveredTotal = 0;
+            let openedTotal = 0;
+            let clickedTotal = 0;
+            let repliedTotal = 0;
+
+            // AI usage counters
+            let geminiCount = 0;
+            let openaiCount = 0;
+
+            // Industry map for statistics
+            const industries = {};
+            // Monthly trends map
+            const trends = {};
+
             data.forEach(camp => {
-                sent += (camp.contactsCount || (camp.contacts ? camp.contacts.length : 0));
+                const contactsCount = camp.contactsCount || (camp.contacts ? camp.contacts.length : 0);
+                const s = {
+                    sent: camp.stats?.sent || contactsCount || 0,
+                    delivered: camp.stats?.delivered || contactsCount || 0,
+                    opened: camp.stats?.opened || 0,
+                    clicked: camp.stats?.clicked || 0,
+                    replied: camp.stats?.replied || 0
+                };
+
+                sentTotal += s.sent || 0;
+                deliveredTotal += s.delivered || 0;
+                openedTotal += s.opened || 0;
+                clickedTotal += s.clicked || 0;
+                repliedTotal += s.replied || 0;
+
+                if (camp.aiEngine === 'openai') openaiCount++;
+                else geminiCount++;
+
+                // Group by Industry
+                if (camp.contacts && Array.isArray(camp.contacts)) {
+                    camp.contacts.forEach(contact => {
+                        const ind = contact.industry || 'General';
+                        if (!industries[ind]) industries[ind] = { name: ind, total: 0, opened: 0 };
+                        industries[ind].total++;
+                        // Estimation: If the campaign has 50% open rate, we apply it to industry contacts for visualization
+                        // since we don't track industry-specific opens yet in the webhook.
+                        const campaignOpenRate = s.delivered > 0 ? (s.opened / s.delivered) : 0;
+                        industries[ind].opened += campaignOpenRate;
+                    });
+                }
+
+                // Group by Month (using timestamp)
+                if (camp.timestamp) {
+                    const date = new Date(camp.timestamp);
+                    const monthName = date.toLocaleString('default', { month: 'short' });
+                    if (!trends[monthName]) trends[monthName] = { name: monthName, envios: 0, aperturas: 0 };
+                    trends[monthName].envios += s.sent || 0;
+                    trends[monthName].aperturas += s.opened || 0;
+                }
             });
-            setTotalSent(sent);
+
+            setTotalSent(sentTotal);
+
+            // Funnel Data
+            setFunnelData([
+                { name: 'Enviados', value: sentTotal },
+                { name: 'Entregados', value: deliveredTotal },
+                { name: 'Abiertos', value: openedTotal },
+                { name: 'Clics', value: clickedTotal },
+                { name: 'Respuestas', value: repliedTotal }
+            ]);
+
+            // AI Performance
+            setAiPerformance([
+                { name: 'ChatGPT', value: openaiCount, fill: '#10b981' },
+                { name: 'Gemini', value: geminiCount, fill: '#3b82f6' }
+            ]);
+
+            // KPIs
+            const oRate = deliveredTotal > 0 ? ((openedTotal / deliveredTotal) * 100).toFixed(1) : 0;
+            const cRate = openedTotal > 0 ? ((clickedTotal / openedTotal) * 100).toFixed(1) : 0;
+            const convRate = sentTotal > 0 ? ((repliedTotal / sentTotal) * 100).toFixed(1) : 0;
+            setKpiCards({ openRate: oRate, clickRate: cRate, convRate: convRate });
+
+            // Industry Performance
+            const indArray = Object.values(industries).map((ind, idx) => ({
+                name: ind.name,
+                aperturas: ind.total > 0 ? ((ind.opened / ind.total) * 100).toFixed(1) : 0,
+                fill: COLORS[idx % COLORS.length]
+            })).slice(0, 5); // Limit to top 5
+            setIndustryPerformance(indArray);
+
+            // Monthly Trends (Order by actual months if possible)
+            const trendArray = Object.values(trends);
+            setMonthlyTrends(trendArray);
         };
         fetchCampaigns();
     }, []);
-
-    // Dummy Data for visual representation (since N8N doesn't send data back yet)
-    const funnelData = [
-        { name: 'Enviados', value: 1250 },
-        { name: 'Entregados', value: 1180 },
-        { name: 'Abiertos', value: 850 },
-        { name: 'Clics', value: 320 },
-        { name: 'Respuestas', value: 45 }
-    ];
-
-    const monthlyTrends = [
-        { name: 'Ene', envios: 400, aperturas: 240, clics: 100 },
-        { name: 'Feb', envios: 600, aperturas: 380, clics: 150 },
-        { name: 'Mar', envios: 800, aperturas: 520, clics: 210 },
-        { name: 'Abr', envios: 1200, aperturas: 780, clics: 340 },
-        { name: 'May', envios: 1500, aperturas: 950, clics: 420 },
-        { name: 'Jun', envios: 2000, aperturas: 1250, clics: 680 }
-    ];
-
-    const industryPerformance = [
-        { name: 'Minería', aperturas: 85, fill: '#10b981' },
-        { name: 'Hospitales', aperturas: 65, fill: '#3b82f6' },
-        { name: 'Textil', aperturas: 45, fill: '#f59e0b' },
-        { name: 'Alimentos', aperturas: 70, fill: '#8b5cf6' },
-        { name: 'Petróleo', aperturas: 90, fill: '#ec4899' }
-    ];
-
-    const aiPerformance = [
-        { name: 'ChatGPT', value: 65, fill: '#10b981' },
-        { name: 'Gemini', value: 35, fill: '#3b82f6' }
-    ];
-
-    const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
 
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
@@ -74,7 +136,7 @@ const CampaignAnalytics = () => {
                     {payload.map((entry, index) => (
                         <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: entry.color || entry.fill }}></div>
-                            <span style={{ color: 'var(--text-muted)' }}>{entry.name}:</span>
+                            <span style={{ color: 'rgba(255,255,255,0.6)' }}>{entry.name}:</span>
                             <span style={{ color: '#fff', fontWeight: 'bold' }}>{entry.value}</span>
                         </div>
                     ))}
@@ -85,151 +147,143 @@ const CampaignAnalytics = () => {
     };
 
     return (
-        <div className="animate-fade-in">
-            <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '12px 20px', borderRadius: '8px', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <AlertTriangle size={20} color="#3b82f6" />
-                <p style={{ margin: 0, color: '#60a5fa', fontSize: '0.9rem' }}>
-                    <strong>Fase Beta:</strong> Estos gráficos muestran datos de demostración. Para ver métricas reales, se requiere configurar los webhooks de retorno desde N8N hacia Firebase (Próxima actualización).
-                </p>
-            </div>
-
-            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '20px' }}>
+        <div className="animate-premium" style={{ color: '#fff' }}>
+            {/* Nav Tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '24px', gap: '8px' }}>
                 <button
                     onClick={() => setActiveTab('dashboard')}
+                    className={`nav-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
                     style={{
-                        padding: '10px 20px',
+                        padding: '12px 24px',
                         background: 'transparent',
-                        border: 'none',
                         color: activeTab === 'dashboard' ? 'var(--primary)' : 'var(--text-muted)',
                         borderBottom: activeTab === 'dashboard' ? '2px solid var(--primary)' : '2px solid transparent',
-                        cursor: 'pointer',
-                        fontSize: '1rem',
-                        fontWeight: activeTab === 'dashboard' ? 'bold' : 'normal',
-                        transition: 'all 0.3s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
+                        borderRadius: '0',
+                        fontSize: '0.95rem'
                     }}
                 >
-                    <TrendingUp size={16} /> Métricas
+                    <TrendingUp size={18} /> Dashboard
                 </button>
                 <button
                     onClick={() => setActiveTab('history')}
+                    className={`nav-tab ${activeTab === 'history' ? 'active' : ''}`}
                     style={{
-                        padding: '10px 20px',
+                        padding: '12px 24px',
                         background: 'transparent',
-                        border: 'none',
                         color: activeTab === 'history' ? 'var(--primary)' : 'var(--text-muted)',
                         borderBottom: activeTab === 'history' ? '2px solid var(--primary)' : '2px solid transparent',
-                        cursor: 'pointer',
-                        fontSize: '1rem',
-                        fontWeight: activeTab === 'history' ? 'bold' : 'normal',
-                        transition: 'all 0.3s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
+                        borderRadius: '0',
+                        fontSize: '0.95rem'
                     }}
                 >
-                    <Calendar size={16} /> Historial
+                    <Calendar size={18} /> Historial
                 </button>
             </div>
 
-            {/* CONDICIONAL: DASHBOARD */}
             {activeTab === 'dashboard' && (
-                <>
-                    {/* KPI Cards */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-                        <div className="glass-card" style={{ padding: '20px', borderLeft: '4px solid #3b82f6' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+                    {/* KPI Cards Grid */}
+                    <div className="kpi-grid">
+                        <div className="glass-card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'var(--primary)' }}></div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
-                                    <p style={{ margin: '0 0 5px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Total Enviados (Real)</p>
-                                    <h3 style={{ margin: 0, fontSize: '1.8rem', color: '#fff' }}>{totalSent}</h3>
+                                    <p style={{ margin: '0 0 8px 0', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase' }}>Enviados Totales</p>
+                                    <h3 style={{ margin: 0, fontSize: '2rem', fontWeight: 800 }}>{totalSent.toLocaleString()}</h3>
                                 </div>
-                                <div style={{ background: 'rgba(59, 130, 246, 0.2)', padding: '10px', borderRadius: '10px' }}>
-                                    <Send size={20} color="#3b82f6" />
+                                <div style={{ background: 'var(--primary-light)', padding: '12px', borderRadius: '12px' }}>
+                                    <Send size={24} color="var(--primary)" />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="glass-card" style={{ padding: '20px', borderLeft: '4px solid #10b981' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div className="glass-card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'var(--success)' }}></div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
-                                    <p style={{ margin: '0 0 5px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Tasa de Apertura</p>
-                                    <h3 style={{ margin: 0, fontSize: '1.8rem', color: '#fff' }}>68%</h3>
+                                    <p style={{ margin: '0 0 8px 0', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase' }}>Tasa de Apertura</p>
+                                    <h3 style={{ margin: 0, fontSize: '2rem', fontWeight: 800 }}>{kpiCards.openRate}%</h3>
                                 </div>
-                                <div style={{ background: 'rgba(16, 185, 129, 0.2)', padding: '10px', borderRadius: '10px' }}>
-                                    <MailOpen size={20} color="#10b981" />
+                                <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '12px', borderRadius: '12px' }}>
+                                    <MailOpen size={24} color="var(--success)" />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="glass-card" style={{ padding: '20px', borderLeft: '4px solid #f59e0b' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div className="glass-card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'var(--warning)' }}></div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
-                                    <p style={{ margin: '0 0 5px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Tasa de Clics (CTR)</p>
-                                    <h3 style={{ margin: 0, fontSize: '1.8rem', color: '#fff' }}>24%</h3>
+                                    <p style={{ margin: '0 0 8px 0', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase' }}>Clicks Reales</p>
+                                    <h3 style={{ margin: 0, fontSize: '2rem', fontWeight: 800 }}>{kpiCards.clickRate}%</h3>
                                 </div>
-                                <div style={{ background: 'rgba(245, 158, 11, 0.2)', padding: '10px', borderRadius: '10px' }}>
-                                    <MousePointerClick size={20} color="#f59e0b" />
+                                <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '12px', borderRadius: '12px' }}>
+                                    <MousePointerClick size={24} color="var(--warning)" />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="glass-card" style={{ padding: '20px', borderLeft: '4px solid #ec4899' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div className="glass-card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#ec4899' }}></div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
-                                    <p style={{ margin: '0 0 5px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Conversión a Leads</p>
-                                    <h3 style={{ margin: 0, fontSize: '1.8rem', color: '#fff' }}>4.2%</h3>
+                                    <p style={{ margin: '0 0 8px 0', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase' }}>Conversión</p>
+                                    <h3 style={{ margin: 0, fontSize: '2rem', fontWeight: 800 }}>{kpiCards.convRate}%</h3>
                                 </div>
-                                <div style={{ background: 'rgba(236, 72, 153, 0.2)', padding: '10px', borderRadius: '10px' }}>
-                                    <TrendingUp size={20} color="#ec4899" />
+                                <div style={{ background: 'rgba(236, 72, 153, 0.1)', padding: '12px', borderRadius: '12px' }}>
+                                    <TrendingUp size={24} color="#ec4899" />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', marginBottom: '20px' }}>
-                        {/* Monthly Trends - Area Chart */}
-                        <div className="glass-card" style={{ padding: '20px' }}>
-                            <h3 style={{ margin: '0 0 20px 0', fontSize: '1.1rem', color: '#fff' }}>Rendimiento Mensual</h3>
-                            <div style={{ height: 300 }}>
+                    {/* Charts Grid */}
+                    <div className="metrics-grid">
+                        <div className="glass-card" style={{ padding: '25px' }}>
+                            <h3 style={{ margin: '0 0 25px 0', fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <Calendar size={20} color="var(--primary)" /> Rendimiento por Mes
+                            </h3>
+                            <div style={{ height: 320, width: '100%' }}>
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={monthlyTrends}>
-                                        <defs>
-                                            <linearGradient id="colorEnvios" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                            </linearGradient>
-                                            <linearGradient id="colorAperturas" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-                                        <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
-                                        <YAxis stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
-                                        <Tooltip content={<CustomTooltip />} />
-                                        <Legend />
-                                        <Area type="monotone" dataKey="envios" name="Envíos" stroke="#3b82f6" fillOpacity={1} fill="url(#colorEnvios)" />
-                                        <Area type="monotone" dataKey="aperturas" name="Aperturas" stroke="#10b981" fillOpacity={1} fill="url(#colorAperturas)" />
-                                    </AreaChart>
+                                    {monthlyTrends.length > 0 ? (
+                                        <AreaChart data={monthlyTrends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                            <defs>
+                                                <linearGradient id="colorEnvios" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3}/>
+                                                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                            <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                                            <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                                            <Tooltip content={<CustomTooltip />} />
+                                            <Area type="monotone" dataKey="envios" name="Envíos" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorEnvios)" />
+                                            <Area type="monotone" dataKey="aperturas" name="Aperturas" stroke="var(--success)" strokeWidth={3} fill="transparent" />
+                                        </AreaChart>
+                                    ) : (
+                                        <div className="empty-state-container">
+                                            <AlertCircle size={40} style={{ marginBottom: '15px', opacity: 0.5 }} />
+                                            <p>No hay datos suficientes para mostrar tendencias temporales.</p>
+                                        </div>
+                                    )}
                                 </ResponsiveContainer>
                             </div>
                         </div>
 
-                        {/* Conversion Funnel - Bar Chart */}
-                        <div className="glass-card" style={{ padding: '20px' }}>
-                            <h3 style={{ margin: '0 0 20px 0', fontSize: '1.1rem', color: '#fff' }}>Embudo de Conversión (Última Campaña)</h3>
-                            <div style={{ height: 300 }}>
+                        <div className="glass-card" style={{ padding: '25px' }}>
+                            <h3 style={{ margin: '0 0 25px 0', fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <TrendingUp size={20} color="var(--success)" /> Embudo de Conversión
+                            </h3>
+                            <div style={{ height: 320, width: '100%' }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={funnelData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" horizontal={false} />
-                                        <XAxis type="number" stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
-                                        <YAxis dataKey="name" type="category" stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} width={80} />
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                                        <XAxis type="number" hide />
+                                        <YAxis dataKey="name" type="category" stroke="var(--text-main)" fontSize={12} width={90} tickLine={false} axisLine={false} />
                                         <Tooltip content={<CustomTooltip />} />
-                                        <Bar dataKey="value" name="Usuarios" radius={[0, 4, 4, 0]} barSize={30}>
+                                        <Bar dataKey="value" name="Total" radius={[0, 6, 6, 0]} barSize={35}>
                                             {funnelData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} fillOpacity={0.8} />
                                             ))}
                                         </Bar>
                                     </BarChart>
@@ -238,18 +292,17 @@ const CampaignAnalytics = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px' }}>
-                        {/* Industry Performance - Radar / Bar */}
-                        <div className="glass-card" style={{ padding: '20px' }}>
-                            <h3 style={{ margin: '0 0 20px 0', fontSize: '1.1rem', color: '#fff' }}>Tasa de Apertura por Industria</h3>
-                            <div style={{ height: 250 }}>
+                    <div className="metrics-grid">
+                        <div className="glass-card" style={{ padding: '25px' }}>
+                            <h3 style={{ margin: '0 0 25px 0', fontSize: '1.1rem', fontWeight: 700 }}>Aperturas por Industria</h3>
+                            <div style={{ height: 280 }}>
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={industryPerformance} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-                                        <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
-                                        <YAxis stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} unit="%" />
-                                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                                        <Bar dataKey="aperturas" name="Aperturas (%)" radius={[4, 4, 0, 0]} barSize={40}>
+                                    <BarChart data={industryPerformance} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                        <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={11} tickLine={false} />
+                                        <YAxis stroke="var(--text-muted)" fontSize={11} unit="%" tickLine={false} />
+                                        <Tooltip content={<CustomTooltip />} />
+                                        <Bar dataKey="aperturas" name="Tasa de Apertura" barSize={30} radius={[4, 4, 0, 0]}>
                                             {industryPerformance.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={entry.fill} />
                                             ))}
@@ -259,75 +312,87 @@ const CampaignAnalytics = () => {
                             </div>
                         </div>
 
-                        {/* AI Engine usage - Pie Chart */}
-                        <div className="glass-card" style={{ padding: '20px' }}>
-                            <h3 style={{ margin: '0 0 20px 0', fontSize: '1.1rem', color: '#fff' }}>Uso de Motores IA</h3>
-                            <div style={{ height: 250, display: 'flex', alignItems: 'center' }}>
+                        <div className="glass-card" style={{ padding: '25px' }}>
+                            <h3 style={{ margin: '0 0 25px 0', fontSize: '1.1rem', fontWeight: 700 }}>Uso de Motores IA</h3>
+                            <div style={{ height: 280 }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
-                                        <Pie
-                                            data={aiPerformance}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={70}
-                                            outerRadius={90}
-                                            paddingAngle={5}
+                                        <Pie 
+                                            data={aiPerformance} 
+                                            cx="50%" 
+                                            cy="50%" 
+                                            innerRadius={70} 
+                                            outerRadius={90} 
+                                            paddingAngle={8} 
                                             dataKey="value"
+                                            stroke="none"
                                         >
                                             {aiPerformance.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={entry.fill} />
                                             ))}
                                         </Pie>
                                         <Tooltip content={<CustomTooltip />} />
-                                        <Legend verticalAlign="middle" align="right" layout="vertical" />
+                                        <Legend verticalAlign="bottom" height={36}/>
                                     </PieChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
                     </div>
-                </>
+                </div>
             )}
 
-            {/* CONDICIONAL: HISTORIAL */}
             {activeTab === 'history' && (
-                <div className="glass-card" style={{ padding: '20px' }}>
-                    <h3 style={{ margin: '0 0 20px 0', fontSize: '1.2rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Calendar size={20} color="var(--primary)" /> Historial de Campañas
+                <div className="glass-card animate-premium" style={{ padding: '24px', overflow: 'hidden' }}>
+                    <h3 style={{ margin: '0 0 24px 0', fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <Calendar size={24} color="var(--primary)" /> Historial de Campañas
                     </h3>
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', minWidth: '600px' }}>
+                    <div className="responsive-table">
+                        <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
                             <thead>
-                                <tr style={{ background: 'rgba(255,255,255,0.05)', textAlign: 'left' }}>
-                                    <th style={{ padding: '12px 15px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Fecha</th>
-                                    <th style={{ padding: '12px 15px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Campaña</th>
-                                    <th style={{ padding: '12px 15px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Vendedor</th>
-                                    <th style={{ padding: '12px 15px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Destinatarios</th>
-                                    <th style={{ padding: '12px 15px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Motor IA</th>
-                                    <th style={{ padding: '12px 15px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Estado</th>
+                                <tr style={{ textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                    <th style={{ padding: '12px 20px', fontWeight: 600, textTransform: 'uppercase' }}>Fecha</th>
+                                    <th style={{ padding: '12px 20px', fontWeight: 600, textTransform: 'uppercase' }}>Campaña</th>
+                                    <th style={{ padding: '12px 20px', fontWeight: 600, textTransform: 'uppercase' }}>Vendedor</th>
+                                    <th style={{ padding: '12px 20px', fontWeight: 600, textTransform: 'uppercase' }}>Métricas</th>
+                                    <th style={{ padding: '12px 20px', fontWeight: 600, textTransform: 'uppercase' }}>Estado</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {history.length > 0 ? history.map((camp, index) => (
-                                    <tr key={camp.id || index} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                        <td style={{ padding: '10px 15px', color: 'var(--text-muted)' }}>
-                                            {new Date(camp.timestamp).toLocaleDateString()} {new Date(camp.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </td>
-                                        <td style={{ padding: '10px 15px', fontWeight: 'bold' }}>{camp.campaignName}</td>
-                                        <td style={{ padding: '10px 15px' }}>{camp.senderName}</td>
-                                        <td style={{ padding: '10px 15px' }}>{camp.contactsCount || (camp.contacts ? camp.contacts.length : 0)}</td>
-                                        <td style={{ padding: '10px 15px' }}>
-                                            <span style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem' }}>
-                                                {camp.aiEngine?.toUpperCase() || 'GEMINI'}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '10px 15px' }}>
-                                            <span style={{ color: 'var(--success)' }}>{camp.status === 'started' ? 'Envíada' : 'Completada'}</span>
-                                        </td>
-                                    </tr>
-                                )) : (
+                                {history.length > 0 ? history.map((camp, index) => {
+                                    const cStats = camp.stats || { sent: camp.contactsCount || 0, opened: 0 };
+                                    return (
+                                        <tr key={camp.id || index} style={{ background: 'rgba(255,255,255,0.02)', transition: 'var(--transition)' }} className="hover-row">
+                                            <td style={{ padding: '15px 20px', borderRadius: '12px 0 0 12px' }}>
+                                                {new Date(camp.timestamp).toLocaleDateString()}
+                                            </td>
+                                            <td style={{ padding: '15px 20px', fontWeight: 700 }}>{camp.campaignName}</td>
+                                            <td style={{ padding: '15px 20px' }}>{camp.senderName}</td>
+                                            <td style={{ padding: '15px 20px' }}>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.8rem' }}>
+                                                    <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{cStats.sent} Env.</span>
+                                                    <span style={{ color: 'var(--success)', fontWeight: 600 }}>{cStats.opened} Aper.</span>
+                                                    <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{cStats.clicked || 0} Clics</span>
+                                                    <span style={{ color: '#ec4899', fontWeight: 600 }}>{cStats.replied || 0} Resp.</span>
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '15px 20px', borderRadius: '0 12px 12px 0' }}>
+                                                <span style={{ 
+                                                    padding: '4px 12px', 
+                                                    background: 'rgba(16, 185, 129, 0.1)', 
+                                                    color: 'var(--success)', 
+                                                    borderRadius: '20px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700
+                                                }}>Completada</span>
+                                            </td>
+                                        </tr>
+                                    );
+                                }) : (
                                     <tr>
-                                        <td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
-                                            No hay campañas registradas aún.
+                                        <td colSpan="5">
+                                            <div className="empty-state-container">
+                                                No hay registros de campañas.
+                                            </div>
                                         </td>
                                     </tr>
                                 )}

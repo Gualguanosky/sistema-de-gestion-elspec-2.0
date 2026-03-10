@@ -12,7 +12,8 @@ import {
     where,
     getDoc,
     setDoc,
-    writeBatch
+    writeBatch,
+    increment
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db_firestore, storage, auth } from "./firebase";
@@ -897,7 +898,14 @@ const db = {
         try {
             const docRef = await addDoc(collection(db_firestore, COLLECTIONS.CAMPAIGNS), {
                 ...campaignData,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                stats: {
+                    sent: campaignData.contactsCount || 0,
+                    delivered: 0,
+                    opened: 0,
+                    clicked: 0,
+                    replied: 0
+                }
             });
             return { id: docRef.id, ...campaignData };
         } catch (e) {
@@ -917,6 +925,26 @@ const db = {
         } catch (e) {
             console.error("Error getting campaigns history:", e);
             return [];
+        }
+    },
+
+    // Allows incrementing stats remotely (e.g. from an N8N webhook hit)
+    incrementCampaignStat: async (campaignId, statType) => {
+        if (!['sent', 'delivered', 'opened', 'clicked', 'replied'].includes(statType)) {
+            throw new Error('Invalid stat type');
+        }
+        try {
+            const docRef = doc(db_firestore, COLLECTIONS.CAMPAIGNS, campaignId);
+            // Construct the path for incrementing, e.g., 'stats.opened'
+            const updateField = `stats.${statType}`;
+            await updateDoc(docRef, {
+                [updateField]: increment(1),
+                lastInteraction: new Date().toISOString()
+            });
+            return true;
+        } catch (error) {
+            console.error(`Error incrementing ${statType} for campaign ${campaignId}:`, error);
+            throw error;
         }
     }
 };

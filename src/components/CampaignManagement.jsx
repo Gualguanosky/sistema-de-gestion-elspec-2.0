@@ -4,10 +4,12 @@ import useAuth from '../hooks/useAuth';
 import db from '../services/db';
 import { ROLES } from '../config/roles';
 import CampaignAnalytics from './CampaignAnalytics';
+import FlyerGenerator from './FlyerGenerator';
+import { Sparkles } from 'lucide-react';
 
 const CampaignManagement = () => {
     const { user } = useAuth();
-    const [mainTab, setMainTab] = useState('campaign'); // 'campaign' or 'salespeople'
+    const [mainTab, setMainTab] = useState('campaign'); // 'campaign', 'salespeople', 'analytics', 'flyers'
 
     // Campaign State
     const [campaignName, setCampaignName] = useState('');
@@ -152,19 +154,25 @@ const CampaignManagement = () => {
                 contacts: emails
             };
 
-            // 1. Guardar Historial en Firebase Local
-            await db.saveCampaign({
+            // 1. Guardar Historial en Firebase Local y obtener el ID generado
+            const savedCampaign = await db.saveCampaign({
                 ...payload,
                 status: 'started',
                 contactsCount: emails.length
             });
 
-            console.log("Enviando Webhook a N8N con payload:", payload);
+            // 2. Incluir el ID de la campaña en el payload para n8n
+            const finalPayload = {
+                ...payload,
+                campaignId: savedCampaign.id
+            };
+
+            console.log("Enviando Webhook a N8N con payload completo:", finalPayload);
 
             const response = await fetch(N8N_WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(finalPayload)
             });
 
             if (!response.ok) {
@@ -172,7 +180,7 @@ const CampaignManagement = () => {
                 throw new Error(`Error de N8N (${response.status}): ${errorText}`);
             }
 
-            setStatus({ type: 'success', message: `¡Campaña "${campaignName}" iniciada! Revisa tu n8n para ver el progreso.` });
+            setStatus({ type: 'success', message: `¡Campaña "${campaignName}" iniciada!.` });
 
             // Limpiar datos sensibles tras éxito
             setEmails([]);
@@ -253,6 +261,25 @@ const CampaignManagement = () => {
                     }}
                 >
                     <BarChart2 size={16} /> Analytics
+                </button>
+                <button
+                    onClick={() => setMainTab('flyers')}
+                    style={{
+                        padding: '10px 20px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: mainTab === 'flyers' ? 'var(--primary)' : 'var(--text-muted)',
+                        borderBottom: mainTab === 'flyers' ? '2px solid var(--primary)' : '2px solid transparent',
+                        cursor: 'pointer',
+                        fontSize: '1rem',
+                        fontWeight: mainTab === 'flyers' ? 'bold' : 'normal',
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}
+                >
+                    <Sparkles size={16} /> Diseño de Flyers (IA)
                 </button>
             </div>
 
@@ -525,7 +552,7 @@ const CampaignManagement = () => {
                             {isSending ? (
                                 <>Enviando a N8N...</>
                             ) : (
-                                <><Send size={20} /> Iniciar Campaña Mágica</>
+                                <><Send size={20} /> Iniciar Campaña</>
                             )}
                         </button>
                     </div>
@@ -598,6 +625,7 @@ const CampaignManagement = () => {
             )}
 
             {mainTab === 'analytics' && <CampaignAnalytics />}
+            {mainTab === 'flyers' && <FlyerGenerator />}
         </div>
     );
 };
