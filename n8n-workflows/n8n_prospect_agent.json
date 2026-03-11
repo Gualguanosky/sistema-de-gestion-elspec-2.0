@@ -1,0 +1,110 @@
+{
+    "name": "Agente Prospector B2B (Apollo/Serper)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "elspec-prospect-agent",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "1",
+            "name": "Webhook (Recibe Empresa y Cargos)",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.apollo.io/v1/mixed_people/search",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Cache-Control",
+                            "value": "no-cache"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "q_organization_domains",
+                            "value": "={{ $json.body.companyName }}"
+                        },
+                        {
+                            "name": "page",
+                            "value": "1"
+                        },
+                        {
+                            "name": "person_titles",
+                            "value": "={{ $json.body.targetRoles ? $json.body.targetRoles.split(',').map(r => r.trim()) : [] }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "2",
+            "name": "Apollo.io API (Búsqueda)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                460,
+                300
+            ],
+            "notesInFlow": true,
+            "notes": "Requiere API Key de Apollo.io en los Credentials de N8N (Header: Cache-Control, Value: tu_api_key)"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Este nodo limpia y formatea la respuesta de Apollo para enviarla al Frontend React\n\nconst results = [];\n\nif (items[0].json && items[0].json.people) {\n  for (const person of items[0].json.people) {\n    results.push({\n      id: person.id || Math.random().toString(),\n      name: person.first_name + ' ' + person.last_name,\n      role: person.title || 'Empleado',\n      email: person.email || person.work_email || '',\n      linkedin: person.linkedin_url || '',\n      industry: person.organization ? person.organization.name : 'Sector Empresarial'\n    });\n  }\n}\n\nreturn { prospects: results };"
+            },
+            "id": "3",
+            "name": "Formatear Resultados",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                680,
+                300
+            ]
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "Webhook (Recibe Empresa y Cargos)": {
+            "main": [
+                [
+                    {
+                        "node": "Apollo.io API (Búsqueda)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Apollo.io API (Búsqueda)": {
+            "main": [
+                [
+                    {
+                        "node": "Formatear Resultados",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {}
+}

@@ -44,7 +44,9 @@ const COLLECTIONS = {
     PRODUCTS: 'products',
     NOTIFICATIONS: 'notifications',
     TERMINOS_CONDICIONES: 'terminos_condiciones',
-    CAMPAIGNS: 'campaigns'
+    CAMPAIGNS: 'campaigns',
+    PROJECTS: 'projects',
+    LOGISTICS: 'logistics'
 };
 
 const db = {
@@ -671,16 +673,92 @@ const db = {
     },
 
     addSale: async (saleData) => {
-        const docRef = await addDoc(collection(db_firestore, COLLECTIONS.VENTAS), {
-            ...saleData,
-            createdAt: new Date().toISOString()
-        });
-        return { id: docRef.id, ...saleData };
+        try {
+            const docRef = await addDoc(collection(db_firestore, COLLECTIONS.VENTAS), {
+                ...saleData,
+                createdAt: new Date().toISOString()
+            });
+            const newSale = { id: docRef.id, ...saleData };
+
+            // Sync con Logística si ya trae líneas (por si se crea con equipos pre-cargados)
+            if (saleData.lineas && saleData.lineas.length > 0) {
+                const projQuery = query(collection(db_firestore, COLLECTIONS.PROJECTS), where('linkedSaleId', '==', newSale.id));
+                const projSnap = await getDocs(projQuery);
+                if (!projSnap.empty) {
+                    const projectId = projSnap.docs[0].id;
+                    for (const linea of saleData.lineas) {
+                        await addDoc(collection(db_firestore, COLLECTIONS.LOGISTICS), {
+                            customer: saleData.cliente?.razon_social || 'Cliente desconocido',
+                            project: projectId,
+                            saleId: newSale.id,
+                            compliance: 'PROJECT',
+                            description: linea.descripcion,
+                            status: 'EN PLANIFICACION',
+                            remarks: `Sync automática desde creación ERP. Cantidad: ${linea.cantidad}`,
+                            author: saleData.createdBy || 'system_sync',
+                            createdAt: new Date().toISOString()
+                        });
+                    }
+                }
+            }
+            return newSale;
+        } catch (error) {
+            console.error("Error en addSale:", error);
+            throw error;
+        }
     },
 
     updateSale: async (saleId, data) => {
-        const docRef = doc(db_firestore, COLLECTIONS.VENTAS, saleId);
-        await updateDoc(docRef, { ...data, updatedAt: new Date().toISOString() });
+        try {
+            const docRef = doc(db_firestore, COLLECTIONS.VENTAS, saleId);
+            await updateDoc(docRef, { ...data, updatedAt: new Date().toISOString() });
+
+            // --- Lógica de Sincronización con Logística ---
+            // Si hay equipos (líneas) y la venta está vinculada a un proyecto,
+            // nos aseguramos de que cada equipo tenga una fila en logística para su seguimiento.
+            if (data.lineas && data.lineas.length > 0) {
+                // 1. Buscar si esta venta pertenece a algún proyecto
+                const projQuery = query(collection(db_firestore, COLLECTIONS.PROJECTS), where('linkedSaleId', '==', saleId));
+                const projSnap = await getDocs(projQuery);
+
+                if (!projSnap.empty) {
+                    const projectId = projSnap.docs[0].id;
+                    const customerName = data.cliente?.razon_social || 'Cliente desconocido';
+
+                    // 2. Obtener lo que ya existe en logística para esta venta para no duplicar
+                    const logQuery = query(collection(db_firestore, COLLECTIONS.LOGISTICS), where('saleId', '==', saleId));
+                    const logSnap = await getDocs(logQuery);
+                    const existingDescriptions = logSnap.docs.map(doc => doc.data().description);
+
+                    // 3. Por cada equipo en el ERP, si no existe en logística, se crea la fila de tracking
+                    for (const linea of data.lineas) {
+                        if (!existingDescriptions.includes(linea.descripcion)) {
+                            await addDoc(collection(db_firestore, COLLECTIONS.LOGISTICS), {
+                                order_no: '',
+                                requisition: '',
+                                customer: customerName,
+                                project: projectId,
+                                saleId: saleId, // Nombre de campo unificado
+                                compliance: 'PROJECT',
+                                description: linea.descripcion,
+                                status: 'EN PLANIFICACION',
+                                date_po: '',
+                                estimated_delivery: '',
+                                date_delivered: '',
+                                delay_time: '',
+                                delivery_condition: '',
+                                remarks: `Sync automática desde ERP. Cantidad: ${linea.cantidad}`,
+                                author: data.createdBy || 'system_sync',
+                                createdAt: new Date().toISOString()
+                            });
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error en updateSale (con sync logistica):", error);
+            throw error;
+        }
     },
 
     deleteSale: async (saleId) => {
@@ -946,6 +1024,80 @@ const db = {
             console.error(`Error incrementing ${statType} for campaign ${campaignId}:`, error);
             throw error;
         }
+    },
+
+    // --- PROJECTS ---
+    subscribeProjects: (callback) => {
+        try {
+            const q = query(collection(db_firestore, COLLECTIONS.PROJECTS), orderBy("createdAt", "desc"));
+            return onSnapshot(q, (snapshot) => {
+                const projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                callback(projects);
+            }, (error) => console.error("Firebase Error (Projects):", error));
+        } catch (e) {
+            console.error("Critical Firebase Error (Projects):", e);
+            return () => { };
+        }
+    },
+
+    addProject: async (projectData) => {
+        try {
+            const docRef = await addDoc(collection(db_firestore, COLLECTIONS.PROJECTS), {
+                ...projectData,
+                createdAt: new Date().toISOString()
+            });
+            return { id: docRef.id, ...projectData };
+        } catch (e) {
+            console.error("Error adding project:", e);
+            throw e;
+        }
+    },
+
+    updateProject: async (projectId, data) => {
+        const docRef = doc(db_firestore, COLLECTIONS.PROJECTS, projectId);
+        await updateDoc(docRef, { ...data, updatedAt: new Date().toISOString() });
+    },
+
+    deleteProject: async (projectId) => {
+        const docRef = doc(db_firestore, COLLECTIONS.PROJECTS, projectId);
+        await deleteDoc(docRef);
+    },
+
+    // --- LOGISTICS ---
+    subscribeLogistics: (callback) => {
+        try {
+            const q = query(collection(db_firestore, COLLECTIONS.LOGISTICS), orderBy("createdAt", "desc"));
+            return onSnapshot(q, (snapshot) => {
+                const logistics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                callback(logistics);
+            }, (error) => console.error("Firebase Error (Logistics):", error));
+        } catch (e) {
+            console.error("Critical Firebase Error (Logistics):", e);
+            return () => { };
+        }
+    },
+
+    addLogisticsRow: async (logisticsData) => {
+        try {
+            const docRef = await addDoc(collection(db_firestore, COLLECTIONS.LOGISTICS), {
+                ...logisticsData,
+                createdAt: new Date().toISOString()
+            });
+            return { id: docRef.id, ...logisticsData };
+        } catch (e) {
+            console.error("Error adding logistics row:", e);
+            throw e;
+        }
+    },
+
+    updateLogisticsRow: async (logisticsId, data) => {
+        const docRef = doc(db_firestore, COLLECTIONS.LOGISTICS, logisticsId);
+        await updateDoc(docRef, { ...data, updatedAt: new Date().toISOString() });
+    },
+
+    deleteLogisticsRow: async (logisticsId) => {
+        const docRef = doc(db_firestore, COLLECTIONS.LOGISTICS, logisticsId);
+        await deleteDoc(docRef);
     }
 };
 

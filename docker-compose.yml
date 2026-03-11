@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      # Sync current directory with /app in container
+      - .:/app
+      # Exclude host node_modules to avoid issues across OS
+      - /app/node_modules
+    environment:
+      # Fix file watching issues in Docker containers
+      - CHOKIDAR_USEPOLLING=true
+      - VITE_PORT=5173
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./api-gateway:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=3000

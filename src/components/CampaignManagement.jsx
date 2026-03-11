@@ -5,11 +5,12 @@ import db from '../services/db';
 import { ROLES } from '../config/roles';
 import CampaignAnalytics from './CampaignAnalytics';
 import FlyerGenerator from './FlyerGenerator';
-import { Sparkles } from 'lucide-react';
+import ProspectFinder from './ProspectFinder';
+import { Sparkles, Search } from 'lucide-react';
 
 const CampaignManagement = () => {
     const { user } = useAuth();
-    const [mainTab, setMainTab] = useState('campaign'); // 'campaign', 'salespeople', 'analytics', 'flyers'
+    const [mainTab, setMainTab] = useState('campaign'); // 'campaign', 'salespeople', 'analytics', 'flyers', 'prospects'
 
     // Campaign State
     const [campaignName, setCampaignName] = useState('');
@@ -30,8 +31,8 @@ const CampaignManagement = () => {
     const [isLoadingSalespeople, setIsLoadingSalespeople] = useState(false);
     const [selectedSalesperson, setSelectedSalesperson] = useState('');
 
-    // URL de producción de N8N Cloud (funciona siempre)
-    const N8N_WEBHOOK_URL = 'https://gualguanosky.app.n8n.cloud/webhook/elspec-pro-agent-v2';
+    const FIREBASE_FUNCTION_URL = import.meta.env.VITE_MARKETING_API_URL || 'http://127.0.0.1:5001/sistema-tickets-766f4/us-central1/marketingService';
+    const N8N_WEBHOOK_URL = FIREBASE_FUNCTION_URL;
 
     // Fetch salespeople immediately so they are available for the dropdown
     useEffect(() => {
@@ -114,6 +115,18 @@ const CampaignManagement = () => {
         setTimeout(() => setStatus({ type: '', message: '' }), 4000);
     };
 
+    const handleAddProspects = (prospectsArray) => {
+        // Añadir prospectos a la lista actual sin sobreescribir los existentes
+        setEmails(prevEmails => [...prevEmails, ...prospectsArray]);
+
+        // Cambiar a la pestaña de campaña para que el usuario vea los correos agregados
+        setMainTab('campaign');
+
+        // Mostrar mensaje de éxito en la vista principal
+        setStatus({ type: 'success', message: `${prospectsArray.length} prospectos transferidos al Banco de Correos correctamente.` });
+        setTimeout(() => setStatus({ type: '', message: '' }), 5000);
+    };
+
     const handleStartCampaign = async () => {
         if (!campaignName.trim()) {
             setStatus({ type: 'error', message: 'Debe ingresar un nombre para la campaña.' });
@@ -161,10 +174,11 @@ const CampaignManagement = () => {
                 contactsCount: emails.length
             });
 
-            // 2. Incluir el ID de la campaña en el payload para n8n
+            // 2. Incluir el ID de la campaña y la ACCIÓN (Router) en el payload para n8n
             const finalPayload = {
                 ...payload,
-                campaignId: savedCampaign.id
+                campaignId: savedCampaign.id,
+                action: 'launch_campaign'
             };
 
             console.log("Enviando Webhook a N8N con payload completo:", finalPayload);
@@ -261,6 +275,25 @@ const CampaignManagement = () => {
                     }}
                 >
                     <BarChart2 size={16} /> Analytics
+                </button>
+                <button
+                    onClick={() => setMainTab('prospects')}
+                    style={{
+                        padding: '10px 20px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: mainTab === 'prospects' ? 'var(--primary)' : 'var(--text-muted)',
+                        borderBottom: mainTab === 'prospects' ? '2px solid var(--primary)' : '2px solid transparent',
+                        cursor: 'pointer',
+                        fontSize: '1rem',
+                        fontWeight: mainTab === 'prospects' ? 'bold' : 'normal',
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}
+                >
+                    <Search size={16} /> Prospectos (IA)
                 </button>
                 <button
                     onClick={() => setMainTab('flyers')}
@@ -625,6 +658,7 @@ const CampaignManagement = () => {
             )}
 
             {mainTab === 'analytics' && <CampaignAnalytics />}
+            {mainTab === 'prospects' && <ProspectFinder onAddProspects={handleAddProspects} />}
             {mainTab === 'flyers' && <FlyerGenerator />}
         </div>
     );

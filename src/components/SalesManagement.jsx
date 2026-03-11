@@ -12,6 +12,8 @@ import logoImg from '../assets/logo.png';
 import { TIPOS_OFERTA, OBTENER_TERMINOS, TERMINOS_EXHAUSTIVOS } from '../utils/termsAndConditions';
 import PricingVariables from './PricingVariables';
 import CatalogConverter from './CatalogConverter';
+import ProjectManagement from './ProjectManagement';
+import ProjectLogistics from './ProjectLogistics';
 
 const SalesManagement = () => {
     const { user } = useAuth();
@@ -19,7 +21,7 @@ const SalesManagement = () => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingSale, setEditingSale] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeSubTab, setActiveSubTab] = useState('list'); // 'list', 'catalog', 'customers', 'terms', 'pricing', 'converter'
+    const [activeSubTab, setActiveSubTab] = useState('projects'); // 'projects', 'logistics', 'list', 'catalog', 'customers', 'terms', 'pricing', 'converter'
     const [dbTerms, setDbTerms] = useState([]);
 
     useEffect(() => {
@@ -58,7 +60,7 @@ const SalesManagement = () => {
             try {
                 const webhookUrl = import.meta.env.VITE_N8N_SALES_WEBHOOK || 'https://hook.us2.make.com/n8n-ventas-placeholder';
                 console.log("Enviando venta a N8N...", newSale);
-                
+
                 // Realizamos el envío de forma asíncrona sin bloquear la UI
                 fetch(webhookUrl, {
                     method: 'POST',
@@ -324,6 +326,24 @@ const SalesManagement = () => {
         <div className="animate-fade-in" style={{ padding: 'clamp(10px, 3vw, 20px)' }}>
             <div style={{ display: 'flex', gap: '5px', marginBottom: '25px', borderBottom: '1px solid var(--border-color)', flexWrap: 'wrap' }}>
                 <button
+                    onClick={() => setActiveSubTab('projects')}
+                    style={{
+                        padding: '10px 20px', background: 'transparent', border: 'none', color: activeSubTab === 'projects' ? 'var(--primary)' : 'var(--text-muted)',
+                        borderBottom: activeSubTab === 'projects' ? '2px solid var(--primary)' : 'none', fontWeight: 'bold'
+                    }}
+                >
+                    Gestión de Proyectos
+                </button>
+                <button
+                    onClick={() => setActiveSubTab('logistics')}
+                    style={{
+                        padding: '10px 20px', background: 'transparent', border: 'none', color: activeSubTab === 'logistics' ? 'var(--primary)' : 'var(--text-muted)',
+                        borderBottom: activeSubTab === 'logistics' ? '2px solid var(--primary)' : 'none', fontWeight: 'bold'
+                    }}
+                >
+                    Logística y Transporte
+                </button>
+                <button
                     onClick={() => setActiveSubTab('list')}
                     style={{
                         padding: '10px 20px', background: 'transparent', border: 'none', color: activeSubTab === 'list' ? 'var(--primary)' : 'var(--text-muted)',
@@ -389,6 +409,10 @@ const SalesManagement = () => {
                 <PricingVariables />
             ) : activeSubTab === 'converter' ? (
                 <CatalogConverter />
+            ) : activeSubTab === 'projects' ? (
+                <ProjectManagement />
+            ) : activeSubTab === 'logistics' ? (
+                <ProjectLogistics />
             ) : (
                 <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>

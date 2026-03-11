@@ -8,6 +8,8 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
+const http = require('http');
 
 // ── Firebase Admin Init ───────────────────────────────────────
 const SA_PATH = path.join(__dirname, 'firebase-service-account.json');
@@ -168,6 +170,162 @@ app.get('/api/report', requireApiKey, async (req, res) => {
 
     } catch (err) {
         console.error('❌ Error generando reporte:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── Helper: HTTP GET con promesa ──────────────────────────────
+function httpGet(url) {
+    return new Promise((resolve, reject) => {
+        const mod = url.startsWith('https') ? https : http;
+        mod.get(url, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try { resolve(JSON.parse(data)); }
+                catch (e) { reject(new Error('JSON parse error: ' + data.substring(0, 200))); }
+            });
+        }).on('error', reject);
+    });
+}
+
+// ── Helper: HTTP POST con promesa ─────────────────────────────
+function httpPost(url, body) {
+    return new Promise((resolve, reject) => {
+        const parsed = new URL(url);
+        const payload = JSON.stringify(body);
+        const options = {
+            hostname: parsed.hostname,
+            path: parsed.pathname,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
+        };
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try { resolve(JSON.parse(data)); }
+                catch (e) { reject(new Error('JSON parse error: ' + data.substring(0, 200))); }
+            });
+        });
+        req.on('error', reject);
+        req.write(payload);
+        req.end();
+    });
+}
+
+// ── POST /api/prospects — Buscador IA (CSE + Gemini + Hunter) ─
+app.post('/api/prospects', async (req, res) => {
+    try {
+        const { companyName, roles } = req.body;
+        if (!companyName) return res.status(400).json({ error: 'companyName requerido' });
+
+        const GOOGLE_KEY = process.env.GOOGLE_SEARCH_API_KEY;
+        const GOOGLE_CX  = process.env.GOOGLE_SEARCH_CX;
+        const GEMINI_KEY = process.env.GEMINI_API_KEY;
+        const HUNTER_KEY = process.env.HUNTER_API_KEY;
+
+        if (!GOOGLE_KEY || !GEMINI_KEY) {
+            return res.status(500).json({ error: 'Faltan variables de entorno GOOGLE_SEARCH_API_KEY o GEMINI_API_KEY en bot-api/.env' });
+        }
+
+        // ─── PASO 1: Google Custom Search ───────────────────────
+        const searchRole = Array.isArray(roles) && roles.length > 0 ? roles[0] : 'Gerente OR Director OR Compras';
+        const query = `site:linkedin.com/in "${searchRole}" "${companyName}"`;
+        const cseUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(query)}&num=10`;
+
+        console.log(`[Prospects] 🔍 Google CSE: ${query}`);
+        const cseData = await httpGet(cseUrl);
+        const items = cseData.items || [];
+
+        if (items.length === 0) {
+            return res.json({ prospects: [], message: 'No se encontraron resultados en Google para esa empresa.' });
+        }
+
+        // ─── PASO 2: Gemini — Extraer perfiles ──────────────────
+        const textToAnalyze = items.map((item, i) =>
+            `Resultado ${i + 1}:\nTítulo: ${item.title}\nDescripción: ${item.snippet}\nLink: ${item.link}`
+        ).join('\n\n');
+
+        const geminiPrompt = `Analiza estos resultados de LinkedIn sobre "${companyName}". Extrae SOLO personas humanas (no páginas de empresa). Devuelve UNICAMENTE un JSON array:
+[{"name":"Nombre Completo","role":"Cargo","linkedin":"URL LinkedIn","companyDomain":"dominio.com"}]
+Si no puedes extraer un campo usa null. Sin texto extra.\n\n${textToAnalyze}`;
+
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
+        console.log(`[Prospects] 🤖 Consultando Gemini...`);
+        const geminiRes = await httpPost(geminiUrl, {
+            contents: [{ parts: [{ text: geminiPrompt }] }]
+        });
+
+        let rawText = geminiRes?.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+        rawText = rawText.trim().replace(/```json/g, '').replace(/```/g, '').trim();
+
+        let extracted = [];
+        try { extracted = JSON.parse(rawText); if (!Array.isArray(extracted)) extracted = []; }
+        catch (e) { console.warn('[Prospects] Gemini parse error:', rawText.substring(0, 200)); }
+
+        if (extracted.length === 0) {
+            return res.json({ prospects: [], message: 'Gemini no pudo extraer prospectos.' });
+        }
+
+        // ─── PASO 3: Hunter.io — Enriquecer emails ──────────────
+        let hunterByDomain = {};
+        if (HUNTER_KEY) {
+            const uniqueDomains = [...new Set(extracted.map(p => p.companyDomain).filter(d => d && d.includes('.')))];
+            console.log(`[Prospects] 📧 Hunter.io para dominios: ${uniqueDomains.join(', ')}`);
+            for (const domain of uniqueDomains) {
+                try {
+                    const hunterUrl = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${HUNTER_KEY}&limit=20`;
+                    const hunterData = await httpGet(hunterUrl);
+                    hunterByDomain[domain] = hunterData?.data?.emails || [];
+                    console.log(`[Prospects] Hunter.io [${domain}]: ${hunterByDomain[domain].length} emails`);
+                } catch (e) {
+                    console.warn(`[Prospects] Hunter.io error para ${domain}:`, e.message);
+                }
+            }
+        }
+
+        // ─── PASO 4: Merge ──────────────────────────────────────
+        const prospects = extracted.map((p, idx) => {
+            let email = null, emailSource = 'not_found';
+            const domain = p.companyDomain;
+            if (domain && hunterByDomain[domain]) {
+                const fn = (p.name || '').split(' ')[0]?.toLowerCase();
+                const ln = (p.name || '').split(' ')[1]?.toLowerCase();
+                const match = hunterByDomain[domain].find(e =>
+                    (fn && (e.first_name || '').toLowerCase().includes(fn)) ||
+                    (ln && (e.last_name  || '').toLowerCase().includes(ln))
+                );
+                if (match) { email = match.value; emailSource = 'hunter_io'; }
+            }
+            return {
+                id: `p_${Date.now()}_${idx}`,
+                name: p.name || 'Desconocido',
+                role: p.role || 'Sin cargo',
+                linkedin: p.linkedin || null,
+                email, emailSource,
+                company: companyName,
+                companyDomain: domain || null
+            };
+        });
+
+        const withEmail = prospects.filter(p => p.email).length;
+        console.log(`[Prospects] ✅ ${prospects.length} prospectos, ${withEmail} con email.`);
+
+        return res.json({
+            prospects,
+            stats: {
+                total: prospects.length,
+                withEmail,
+                emailSources: {
+                    hunter_io: prospects.filter(p => p.emailSource === 'hunter_io').length,
+                    not_found:  prospects.filter(p => p.emailSource === 'not_found').length
+                }
+            }
+        });
+
+    } catch (err) {
+        console.error('[Prospects] ❌ Error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });

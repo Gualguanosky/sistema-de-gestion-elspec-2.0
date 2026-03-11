@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-    Palette, 
-    Sparkles, 
-    Image as ImageIcon, 
-    Download, 
-    Type, 
+import {
+    Palette,
+    Sparkles,
+    Image as ImageIcon,
+    Download,
+    Type,
     Layout,
     RefreshCw,
     Send,
@@ -18,7 +18,8 @@ const FlyerGenerator = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedContent, setGeneratedContent] = useState(null);
 
-    const N8N_FLYER_WEBHOOK = 'https://gualguanosky.app.n8n.cloud/webhook/elspec-flyer-agent-v1';
+    const FIREBASE_FUNCTION_URL = import.meta.env.VITE_MARKETING_API_URL || 'http://127.0.0.1:5001/sistema-tickets-766f4/us-central1/marketingService';
+    const N8N_UNIFIED_WEBHOOK = FIREBASE_FUNCTION_URL;
 
     const handleGenerate = async (e) => {
         e.preventDefault();
@@ -26,10 +27,11 @@ const FlyerGenerator = () => {
 
         setIsGenerating(true);
         try {
-            const response = await fetch(N8N_FLYER_WEBHOOK, {
+            const response = await fetch(N8N_UNIFIED_WEBHOOK, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    action: 'create_flyer',
                     prompt,
                     industry,
                     tone,
@@ -46,7 +48,7 @@ const FlyerGenerator = () => {
 
             const data = await response.json();
             console.log("Datos recibidos de n8n:", data);
-            
+
             // Intentamos extraer datos de varias formas por si n8n los devuelve anidados
             const title = data.title || (data.body && data.body.title) || `Propuesta para ${industry}`;
             const copy = data.copy || (data.body && data.body.copy) || 'Error al generar el texto. Intenta de nuevo.';
@@ -58,7 +60,7 @@ const FlyerGenerator = () => {
         } catch (err) {
             console.error("Error en generación IA:", err);
             alert("Hubo un problema al conectar con la IA de n8n. Verifica que el flujo esté activo y las credenciales configuradas.");
-            
+
             setGeneratedContent({
                 title: "Error de Conexión",
                 copy: "No pudimos obtener una respuesta de la IA. Por favor, asegúrate de que el flujo en n8n esté en 'Active' y que tengas saldo en OpenAI.",
@@ -72,7 +74,7 @@ const FlyerGenerator = () => {
 
     const handleDownload = async () => {
         if (!generatedContent) return;
-        
+
         try {
             // Intentar descargar Imagen vía Fetch (funcionará si hay CORS)
             try {
@@ -135,7 +137,7 @@ TONO: ${tone}
                         <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <Type size={16} color="var(--primary)" /> ¿Qué quieres comunicar?
                         </label>
-                        <textarea 
+                        <textarea
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             placeholder="Ej: Oferta del 20% en transformadores de potencia para el sector minero durante este mes..."
@@ -147,8 +149,8 @@ TONO: ${tone}
 
                     <div className="input-group">
                         <label>Industria Objetivo</label>
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             value={industry}
                             onChange={(e) => setIndustry(e.target.value)}
                             placeholder="Ej: Minería, Papelera, Alimentos..."
@@ -158,7 +160,7 @@ TONO: ${tone}
 
                     <div className="input-group">
                         <label>Tono de Voz</label>
-                        <select 
+                        <select
                             value={tone}
                             onChange={(e) => setTone(e.target.value)}
                             style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
@@ -171,13 +173,13 @@ TONO: ${tone}
                     </div>
 
                     <div style={{ gridColumn: '1 / -1', marginTop: '10px' }}>
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             disabled={isGenerating}
-                            className="btn-primary" 
-                            style={{ 
-                                width: '100%', 
-                                padding: '15px', 
+                            className="btn-primary"
+                            style={{
+                                width: '100%',
+                                padding: '15px',
                                 background: 'linear-gradient(90deg, var(--primary), #8b5cf6)',
                                 display: 'flex',
                                 justifyContent: 'center',
@@ -201,17 +203,17 @@ TONO: ${tone}
                     {/* Preview del Flyer */}
                     <div className="glass-card animate-slide-up" style={{ padding: '0', overflow: 'hidden', border: '1px solid var(--primary)' }}>
                         <div style={{ position: 'relative' }}>
-                            <img 
-                                src={generatedContent.imageUrl} 
-                                alt="Flyer IA" 
+                            <img
+                                src={generatedContent.imageUrl}
+                                alt="Flyer IA"
                                 style={{ width: '100%', height: '300px', objectFit: 'cover' }}
                             />
-                            <div style={{ 
-                                position: 'absolute', 
-                                bottom: 0, 
-                                left: 0, 
-                                width: '100%', 
-                                padding: '20px', 
+                            <div style={{
+                                position: 'absolute',
+                                bottom: 0,
+                                left: 0,
+                                width: '100%',
+                                padding: '20px',
                                 background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
                                 color: 'white'
                             }}>
@@ -227,7 +229,7 @@ TONO: ${tone}
                             </button>
                         </div>
                         <div style={{ padding: '15px', borderTop: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.02)', display: 'flex', justifyContent: 'center' }}>
-                            <button 
+                            <button
                                 onClick={handleDownload}
                                 style={{ background: 'transparent', color: 'var(--primary)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: 'bold' }}
                             >
@@ -241,7 +243,7 @@ TONO: ${tone}
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
                             <Layout size={20} color="#8b5cf6" /> Sugerencias Estratégicas
                         </h4>
-                        
+
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                             <div style={{ padding: '15px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 'bold', marginBottom: '5px' }}>ASUNTO SUGERIDO</div>
