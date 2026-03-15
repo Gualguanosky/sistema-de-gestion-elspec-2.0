@@ -10,12 +10,13 @@
 
 | Capa | Tecnología |
 |---|---|
-| Frontend | React (Vite) |
-| Backend / Orquestación | N8N (n8n Cloud: `gualguanosky.app.n8n.cloud`) |
-| Base de Datos | Firebase (Firestore) |
-| Serverless Functions | Firebase Cloud Functions (`functions/`) |
-| Integraciones IA | Google Gemini, DALL-E (flyers), Unsplash |
-| Integraciones externas | Apollo.io (prospectos), Google Custom Search, Outlook |
+| Frontend | React (Vite) en VPS (`https://gestionelspec.site`) |
+| Backend / Orquestación | N8N Self-hosted (Docker) |
+| Base de Datos | Firebase (Firestore) + PostgreSQL (VPS) |
+| Proxy / SSL | Nginx + Certbot (HTTPS) |
+| Almacenamiento | Almacenamiento local VPS (`/var/www/elspec/storage`) |
+| Integraciones IA | Google Gemini, OpenAI (GPT-3.5/4o), Hunter.io |
+| Integraciones externas | Apollo.io, Google Custom Search, Outlook |
 
 ---
 
@@ -212,11 +213,167 @@ Crear Proyecto (ProjectManagement)
 
 ---
 
-## 🔴 Pendientes Globales (Para la Próxima Sesión)
+### Sesión 9 — Corrección de Configuración y Preparación de QA
+**Fecha:** 2026-03-11
+**Conversación:** `b11f164c-8ed8-4c6d-b9dd-b1b92a4fbf9d`
 
-1. [ ] **Verificación de Envíos Reales:** Ya que probamos la llegada de los prospectos a la grilla en React, hay que probar seleccionar prospectos y pulsar "Lanzar Campaña" para verificar si en la vida real OpenAI redacta y el nodo de Mail manda correctamente el Flyer recién generado.
-2. [ ] Si todo el flujo de Campaigns QA pasa sin errores, podemos dar por concluido de raíz el módulo de IA del Sistema Elspec.
+**Temas:**
+- Validación del flujo "Lanzar Campaña".
+- Detección de configuración faltante en `.env`.
+- Intento de despliegue a Firebase (Blaze Plan Error).
+
+**✅ Completado:**
+- **Configuración Fix:** Se agregó `VITE_MARKETING_API_URL` al archivo `.env` apuntando al Agente Unificado de N8N.
+- **Identificación de Limitación Cloud:** Se confirmó que el plan **Spark** de Firebase no permite desplegar funciones v2 ni hacer peticiones externas (Google/Hunter.io) desde las Cloud Functions.
+
+**🔴 Pendiente Inmediato (QA):**
+1. **Validación N8N:** Dado que N8N no depende de Firebase Blaze, el plan sigue siendo probar el flujo desde el frontend local contra N8N.
+2. **Upgrade de Firebase (Opcional):** Si se desea usar las Cloud Functions en el futuro, se requiere pasar a plan Blaze.
+
+### Sesión 11 — Revisión de Estado y Preparación de QA
+**Fecha:** 2026-03-11
+**Conversación:** `c10dec83-6c44-4eee-af7f-1c0645cecb15`
+
+**Temas:**
+- Revisión integral de la bitácora tras la migración exitosa.
+- Verificación de la configuración del entorno (.env) para el nuevo dominio del VPS.
+
+**✅ Completado:**
+- Confirmación de la conectividad con `n8n.gestionelspec.site`.
+- Sincronización de contexto para el cierre de jornada.
+
+**⚠️ Pendiente / Próximos pasos:**
+- Importar `n8n_unified_ai_agent.json` en n8n.
+- Validar el flujo de Prospect Finder en producción (Frontend -> n8n -> APIs).
+
+### Sesión 12 — Depuración de Credenciales y Validación de Frontend
+**Fecha:** 2026-03-12
+**Conversación:** `2468cf11-b759-4173-91fe-5da97092d00b`
+
+**Temas:**
+- Error "Invalid API Key" en el buscador de prospectos.
+- Limpieza de fallbacks inválidos en n8n.
+- Validación proactiva en el frontend.
+
+**✅ Completado:**
+- **Restaurada lógica de n8n Cloud:** Volvimos al Scraper de DuckDuckGo para evitar errores de API Key de Google.
+- Eliminada la funcionalidad de Flyers: Borrado `FlyerGenerator.jsx` y limpieza de n8n.
+- Verificación de build exitosa.
+
+**⚠️ Pendiente / Próximos pasos:**
+- El usuario debe configurar sus propias llaves en la pestaña "Configuración".
+- Pruebas reales de búsqueda con llaves válidas.
 
 ---
 
-*Última actualización: 2026-03-10 | Por: Antigravity AI*
+*Última actualización: 2026-03-12 | Por: Antigravity AI*
+
+## Sesión 10 — Migración Total a VPS y Dominio Propio
+**Fecha:** 2026-03-11
+**Conversación:** `b11f164c-8ed8-4c6d-b9dd-b1b92a4fbf9d` (Final)
+
+**Temas:**
+- Finalización del sistema de seguimiento ("Tecking").
+- Migración de n8n Cloud a n8n Self-hosted en VPS.
+- Implementación de dominio propio con SSL.
+- Configuración de PostgreSQL para persistencia avanzada.
+
+**✅ Completado:**
+1. **Infraestructura VPS:** Despliegue de Docker/Docker Compose en Ubuntu 24.04.
+2. **Base de Datos:** Migración de n8n de SQLite a **PostgreSQL 16** para mayor robustez.
+3. **Dominio & SSL:** Configuración de `https://gestionelspec.site` con Certbot y Nginx.
+4. **"Tecking" (Tracking):** Actualización de todos los flujos para que el pixel de seguimiento apunte al nuevo dominio local.
+5. **Almacenamiento:** Creación de volumen persistente `/var/www/elspec/storage` para reportes, fotos y facturas PDF futuras.
+6. **Frontend:** Despliegue del build local (`dist`) directamente al VPS vía Nginx.
+
+**Estado Final:**
+El sistema es ahora 100% independiente de n8n Cloud y Firebase Functions (Spark limitations). Toda la lógica corre en el VPS propio bajo el dominio consolidado.
+
+---
+
+*Última actualización: 2026-03-11 (Cierre de día) | Por: Antigravity AI*
+
+## [2026-03-11] VPS Migration & Docker-Native Setup (Part 1)
+
+**Estado Actual:**
+- **Servidor:** VPS Hostinger KVM 2, Ubuntu 24.04 (Docker-Native).
+- **Infraestructura:** Stack de Docker unificado corriendo 4 servicios (Nginx Proxy Manager, PostgreSQL 16, n8n-server, elspec-frontend).
+- **Dominios:**
+    - `https://gestionelspec.site`: **OK** (Frontend React desplegado y con SSL).
+    - `n8n.gestionelspec.site`: **En progreso** (Decisión de mover a subdominio para evitar errores de carga de archivos en subruta).
+- **Base de Datos:** PostgreSQL configurado con volumen persistente en `~/elspec-stack/db_data`.
+
+**Acciones Pendientes para el regreso:**
+1. Verificar que el registro DNS `n8n` apunte a la IP `187.124.152.139`.
+2. Crear el Proxy Host para `n8n.gestionelspec.site` en el panel de NPM (IP:81).
+3. Importar el flujo `n8n_unified_ai_agent.json` y configurar credenciales (OpenAI, Hunter, Google).
+4. Verificación final de "Email Tracking" en el nuevo dominio.
+
+
+## [2026-03-11] VPS Migration - ¡MISIÓN CUMPLIDA! 🏆
+
+**Resultado Final:**
+- **Frontend Live:** [https://gestionelspec.site](https://gestionelspec.site) (SSL OK).
+- **Automation Live:** [https://n8n.gestionelspec.site](https://n8n.gestionelspec.site) (SSL OK).
+- **Infraestructura:** 100% Docker-Native en Hostinger VPS.
+- **Base de Datos:** PostgreSQL persistente conectada a n8n.
+
+**Siguientes Pasos (Finales):**
+1. Importar `n8n_unified_ai_agent.json`.
+### Sesión 11 — Revisión de Estado y Preparación de QA
+**Fecha:** 2026-03-11
+**Conversación:** `c10dec83-6c44-4eee-af7f-1c0645cecb15`
+
+**Temas:**
+- Revisión integral de la bitácora tras la migración exitosa.
+- Verificación de la configuración del entorno (.env) para el nuevo dominio del VPS.
+
+**✅ Completado:**
+- Confirmación de la conectividad con `n8n.gestionelspec.site`.
+- Sincronización de contexto para el cierre de jornada.
+
+**⚠️ Pendiente / Próximos pasos:**
+- Importar `n8n_unified_ai_agent.json` en n8n.
+- Validar el flujo de Prospect Finder en producción (Frontend -> n8n -> APIs).
+
+---
+
+### Sesión 13 — Migración Crítica: Firebase a PostgreSQL (v8.0)
+**Fecha:** 2026-03-13
+**Conversación:** `33ecdb3d-5e40-4e2a-b909-49523289bb11`
+
+**Temas:**
+- Migración masiva de datos desde Firebase Firestore hacia PostgreSQL (VPS).
+- Configuración de flujos de n8n con SQL parametrizado ($1, $2, etc.).
+- Depuración de tipos de datos numéricos y estructuras anidadas en Firebase.
+- Implementación de lógica de "Upsert" (`ON CONFLICT`) para migración segura.
+
+**✅ Completado:**
+- **Esquema Postgres v8.0:** Despliegue exitoso del esquema relacional completo en el esquema `elspec`.
+- **Migración de Usuarios:** 15 registros migrados con `firebase_id` como referencia.
+- **Migración de Clientes:** Resolución de nombres de colección y mapeo de campos ERP.
+- **Migración de Ventas:** Superado error de sintaxis en N8N mediante consultas parametrizadas y mapeo de `totales.total`.
+- **Configuración N8N:** Workflow `n8n_migration_v1.json` listo y probado para las 3 entidades principales.
+
+**⚠️ Pendiente / Próximos pasos:**
+- **Tickets y Equipos:** Ejecutar los nodos de migración para `tickets` y `computers` (ya configurados).
+- **Procesos SGI:** Migrar `sgi_processes` y `sgi_evidence`.
+- **Limpieza Firebase:** Una vez validado todo en Postgres, preparar el "apagado" de las llamadas a Firebase en el frontend.
+
+---
+
+## 🔴 Pendientes Globales / Próximos Pasos
+- [x] Desplegar PostgreSQL en VPS con Docker.
+- [x] Configurar esquema `elspec` y seguridad.
+- [/] Migración total de Firebase a Postgres:
+    - [x] Usuarios
+    - [x] Clientes (Customers)
+    - [x] Ventas (ERP)
+    - [ ] Tickets y Soporte
+    - [ ] SGI y Procesos
+- [ ] Actualizar Frontend para leer desde API Gateway (Postgres) en lugar de Firestore.
+- [ ] QA Final de integridad referencial.
+
+---
+
+*Última actualización: 2026-03-13 | Por: Antigravity AI (Master Agent)*

@@ -1,0 +1,457 @@
+{
+  "name": "Agente Maestro Elspec v6.1.1 (Fixed Connections)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "elspec-master-v6",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Maestro v6",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "elspec-track-v6",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "tracking-webhook",
+      "name": "Webhook Tracking Pixel",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        200,
+        700
+      ],
+      "webhookId": "elspec-track-v6"
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.body.action }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "find_prospects",
+              "outputKey": "find_prospects"
+            },
+            {
+              "value2": "launch_campaign",
+              "outputKey": "launch_campaign"
+            }
+          ]
+        },
+        "fallbackOutput": 2
+      },
+      "id": "action-router",
+      "name": "Enrutador de Acción",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://serpapi.com/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "=site:linkedin.com/in \"{{ $json.body.companyName }}\" {{ $json.body.targetRoles || '' }}"
+            },
+            {
+              "name": "engine",
+              "value": "google"
+            },
+            {
+              "name": "api_key",
+              "value": "TU_API_KEY_AQUI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "serpapi-http",
+      "name": "SerpApi (Google Search)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        700,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "llama3-70b-8192"
+            },
+            {
+              "name": "messages.0.role",
+              "value": "system"
+            },
+            {
+              "name": "messages.0.content",
+              "value": "Eres un extractor de datos B2B experto."
+            },
+            {
+              "name": "messages.1.role",
+              "value": "user"
+            },
+            {
+              "name": "messages.1.content",
+              "value": "=Extrae prospectos en JSON de estos resultados:\n{{ JSON.stringify($json.organic_results) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "groq-extractor",
+      "name": "Groq Llama3 (Extractor)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        950,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const raw = $json.choices[0].message.content;\n  const data = JSON.parse(raw.replace(/```json|```/gi, '').trim());\n  return data.map(i => ({ json: i }));\n} catch (e) {\n  return [];\n}"
+      },
+      "id": "json-parser",
+      "name": "Parsear JSON AI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.hunter.io/v2/domain-search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "domain",
+              "value": "={{ $json.companyDomain }}"
+            },
+            {
+              "name": "api_key",
+              "value": "TU_KEY_AQUI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "hunter-enrich",
+      "name": "Hunter.io (Enriquecer)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1450,
+        150
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return { ...$json, email: $json.email || 'ia@guess.com', id: Math.random().toString(36).substr(2, 9) };"
+      },
+      "id": "email-magic",
+      "name": "Deducir Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return { prospects: $input.all().map(i => i.json) };"
+      },
+      "id": "aggregate-prospects",
+      "name": "Agrupar Prospectos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1950,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseBody": "={{ $json }}"
+        }
+      },
+      "id": "respond-prospects",
+      "name": "Respond Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2200,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseBody": "{\"message\": \"Campaña iniciada.\"}"
+        }
+      },
+      "id": "respond-campaign-early",
+      "name": "Responder OK Campaña",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        700,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.all()[0].json.body;\nconst contacts = body.contacts || [];\nreturn contacts.map(c => ({ json: { ...body, ...c, contacts: undefined } }));"
+      },
+      "id": "split-contacts",
+      "name": "Separar Contactos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        950,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return { html: `<h1>Hola ${$json.name}</h1>`, ...$json };"
+      },
+      "id": "build-email",
+      "name": "Construir Email + Pixel",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "ventas@gestionelspec.site",
+        "toEmail": "={{ $json.email }}",
+        "subject": "Prueba",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "send-smtp",
+      "name": "Enviar SMTP",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1450,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "redirect",
+        "redirectUrl": "https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png",
+        "options": {}
+      },
+      "id": "track-redirect",
+      "name": "Redirigir a Pixel 1x1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        450,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO tracking_logs (email) VALUES ($1)",
+        "parameters": {
+          "parameter": [
+            {
+              "name": "email",
+              "value": "={{ $json.query.email }}"
+            }
+          ]
+        }
+      },
+      "id": "track-db",
+      "name": "Guardar Apertura en Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.2,
+      "position": [
+        450,
+        800
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Maestro v6": {
+      "main": [
+        [
+          {
+            "node": "Enrutador de Acción",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrutador de Acción": {
+      "main": [
+        [
+          {
+            "node": "SerpApi (Google Search)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder OK Campaña",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Separar Contactos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpApi (Google Search)": {
+      "main": [
+        [
+          {
+            "node": "Groq Llama3 (Extractor)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Llama3 (Extractor)": {
+      "main": [
+        [
+          {
+            "node": "Parsear JSON AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear JSON AI": {
+      "main": [
+        [
+          {
+            "node": "Hunter.io (Enriquecer)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hunter.io (Enriquecer)": {
+      "main": [
+        [
+          {
+            "node": "Deducir Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deducir Email": {
+      "main": [
+        [
+          {
+            "node": "Agrupar Prospectos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agrupar Prospectos": {
+      "main": [
+        [
+          {
+            "node": "Respond Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar Contactos": {
+      "main": [
+        [
+          {
+            "node": "Construir Email + Pixel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir Email + Pixel": {
+      "main": [
+        [
+          {
+            "node": "Enviar SMTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Tracking Pixel": {
+      "main": [
+        [
+          {
+            "node": "Redirigir a Pixel 1x1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Guardar Apertura en Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "6.1.1"
+}

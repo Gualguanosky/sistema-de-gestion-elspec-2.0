@@ -23,7 +23,7 @@ app.get('/health', (req, res) => {
 // ==========================================
 
 // Proxy N8N Central Webhook (Lógica de Marketing heredada temporal)
-const N8N_MASTER_WEBHOOK = process.env.N8N_URL || 'https://gualguanosky.app.n8n.cloud';
+const N8N_MASTER_WEBHOOK = process.env.N8N_URL || 'http://187.124.152.139:5678';
 
 app.use('/api/n8n', createProxyMiddleware({
     target: N8N_MASTER_WEBHOOK,

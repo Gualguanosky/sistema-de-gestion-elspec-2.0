@@ -1,0 +1,297 @@
+{
+  "name": "Agente Maestro Elspec v7.1.2 (Schema Ready)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "elspec-master-v7",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Maestro v7",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.body.action }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "find_prospects",
+              "outputKey": "find_prospects"
+            },
+            {
+              "value2": "launch_campaign",
+              "outputKey": "launch_campaign"
+            }
+          ]
+        },
+        "fallbackOutput": 2
+      },
+      "id": "action-router",
+      "name": "Enrutador de Acción",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://serpapi.com/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "=site:linkedin.com/in \"{{ $json.body.companyName }}\" {{ $json.body.targetRoles || '' }}"
+            },
+            {
+              "name": "engine",
+              "value": "google"
+            },
+            {
+              "name": "api_key",
+              "value": "TU_API_KEY_SERPAPI"
+            }
+          ]
+        }
+      },
+      "id": "serpapi-http",
+      "name": "SerpApi (Buscador)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=TU_GEMINI_KEY",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents.0.parts.0.text",
+              "value": "=Extrae prospectos en JSON (nombre, cargo, linkedin, companyDomain) de:\n{{ JSON.stringify($json.organic_results) }}"
+            }
+          ]
+        }
+      },
+      "id": "gemini-extract",
+      "name": "Gemini (Extraer)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        700,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const raw = $json.candidates[0].content.parts[0].text;\n  const data = JSON.parse(raw.replace(/```json|```/gi, '').trim());\n  return data.map(i => ({ json: i }));\n} catch (e) {\n  return [];\n}"
+      },
+      "id": "json-parser",
+      "name": "Parsear JSON Gemini",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=TU_GEMINI_KEY",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents.0.parts.0.text",
+              "value": "=Redacta un correo profesional humano para {{ $json.name }}."
+            }
+          ]
+        }
+      },
+      "id": "gemini-email",
+      "name": "Gemini (Redactar Email)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        600,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cid = $json.campaignId || 'manual';\nconst email = $json.email;\nconst track = `https://n8n.gestionelspec.site/webhook/elspec-track-v7?campaignId=${cid}&email=${encodeURIComponent(email)}&type=open`;\nconst click = `https://n8n.gestionelspec.site/webhook/elspec-track-v7?campaignId=${cid}&email=${encodeURIComponent(email)}&type=click&target=https://elspec-formulario.web.app`;\nreturn { finalHtml: `<div>${$json.candidates[0].content.parts[0].text}<br><br><a href=\"${click}\">Saber Más</a><img src=\"${track}\" /></div>`, ...$json };"
+      },
+      "id": "tracking-builder",
+      "name": "Inyectar Tracking",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "elspec-track-v7",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "track-webhook",
+      "name": "Webhook Tracking v7",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        700
+      ],
+      "webhookId": "elspec-track-v7"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO elspec.campaign_stats (campaign_id, email, event_type, timestamp) VALUES ($1, $2, $3, NOW())",
+        "parameters": {
+          "parameter": [
+            {
+              "name": "cid",
+              "value": "={{ $json.query.campaignId }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $json.query.email }}"
+            },
+            {
+              "name": "type",
+              "value": "={{ $json.query.type }}"
+            }
+          ]
+        }
+      },
+      "id": "db-track",
+      "name": "DB Log Tracking",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "redirect",
+        "redirectUrl": "={{ $json.query.type === 'open' ? 'https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png' : $json.query.target }}"
+      },
+      "id": "final-respond",
+      "name": "Responder Pixel/Redir",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        600,
+        700
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Maestro v7": {
+      "main": [
+        [
+          {
+            "node": "Enrutador de Acción",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrutador de Acción": {
+      "main": [
+        [
+          {
+            "node": "SerpApi (Buscador)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gemini (Redactar Email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpApi (Buscador)": {
+      "main": [
+        [
+          {
+            "node": "Gemini (Extraer)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini (Extraer)": {
+      "main": [
+        [
+          {
+            "node": "Parsear JSON Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini (Redactar Email)": {
+      "main": [
+        [
+          {
+            "node": "Inyectar Tracking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Tracking v7": {
+      "main": [
+        [
+          {
+            "node": "DB Log Tracking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB Log Tracking": {
+      "main": [
+        [
+          {
+            "node": "Responder Pixel/Redir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

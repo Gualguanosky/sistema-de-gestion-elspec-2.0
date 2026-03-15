@@ -4,13 +4,12 @@ import useAuth from '../hooks/useAuth';
 import db from '../services/db';
 import { ROLES } from '../config/roles';
 import CampaignAnalytics from './CampaignAnalytics';
-import FlyerGenerator from './FlyerGenerator';
 import ProspectFinder from './ProspectFinder';
 import { Sparkles, Search } from 'lucide-react';
 
 const CampaignManagement = () => {
     const { user } = useAuth();
-    const [mainTab, setMainTab] = useState('campaign'); // 'campaign', 'salespeople', 'analytics', 'flyers', 'prospects'
+    const [mainTab, setMainTab] = useState('campaign'); // 'campaign', 'salespeople', 'analytics', 'prospects'
 
     // Campaign State
     const [campaignName, setCampaignName] = useState('');
@@ -294,25 +293,6 @@ const CampaignManagement = () => {
                     }}
                 >
                     <Search size={16} /> Prospectos (IA)
-                </button>
-                <button
-                    onClick={() => setMainTab('flyers')}
-                    style={{
-                        padding: '10px 20px',
-                        background: 'transparent',
-                        border: 'none',
-                        color: mainTab === 'flyers' ? 'var(--primary)' : 'var(--text-muted)',
-                        borderBottom: mainTab === 'flyers' ? '2px solid var(--primary)' : '2px solid transparent',
-                        cursor: 'pointer',
-                        fontSize: '1rem',
-                        fontWeight: mainTab === 'flyers' ? 'bold' : 'normal',
-                        transition: 'all 0.3s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                    }}
-                >
-                    <Sparkles size={16} /> Diseño de Flyers (IA)
                 </button>
             </div>
 
@@ -659,7 +639,6 @@ const CampaignManagement = () => {
 
             {mainTab === 'analytics' && <CampaignAnalytics />}
             {mainTab === 'prospects' && <ProspectFinder onAddProspects={handleAddProspects} />}
-            {mainTab === 'flyers' && <FlyerGenerator />}
         </div>
     );
 };

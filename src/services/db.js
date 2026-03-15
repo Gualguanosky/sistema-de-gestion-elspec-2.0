@@ -793,6 +793,8 @@ const db = {
                     AEREO: { FACTOR_1: 2.2, FACTOR_2: 0.5, MULTIPLICADOR: 1.18 }
                 },
                 geminiApiKey: '',
+                googleApiKey: '',
+                googleCx: '',
                 lastUpdated: new Date().toISOString()
             };
 

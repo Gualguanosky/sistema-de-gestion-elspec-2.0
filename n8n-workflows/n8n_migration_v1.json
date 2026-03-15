@@ -1,0 +1,447 @@
+{
+  "name": "Firebase to Postgres Migration v8.0",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": ""
+      },
+      "id": "7f6d8a9b-1c2d-3e4f-5g6h-7i8j9k0l1m2n",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "collection": "users"
+      },
+      "id": "e1f2g3h4-i5j6-k7l8-m9n0-o1p2q3r4s5t6",
+      "name": "Firebase: Get Users",
+      "type": "n8n-nodes-base.googleFirebase",
+      "typeVersion": 1,
+      "position": [300, 100],
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "YOUR_FIREBASE_CREDENTIAL_ID"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": "elspec",
+        "table": "users",
+        "columns": "firebase_id,username,email,full_name,password,role",
+        "values": {
+          "firebase_id": "={{$json.id}}",
+          "username": "={{$json.username}}",
+          "email": "={{$json.email}}",
+          "full_name": "={{$json.name}}",
+          "password": "={{$json.password}}",
+          "role": "={{$json.role}}"
+        },
+        "onConflict": "firebase_id"
+      },
+      "id": "u1v2w3x4-y5z6-a7b8-c9d0-e1f2g3h4i5j6",
+      "name": "Postgres: Upsert Users",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [550, 100],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "collection": "customers"
+      },
+      "id": "c1u2s3t4-o5m6-e7r8-s901-o2r3t4h5i6j7",
+      "name": "Firebase: Get Customers",
+      "type": "n8n-nodes-base.googleFirebase",
+      "typeVersion": 1,
+      "position": [300, 300],
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "YOUR_FIREBASE_CREDENTIAL_ID"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": "elspec",
+        "table": "customers",
+        "columns": "firebase_id,name,tax_id,email,phone,address,contact_person",
+        "values": {
+          "firebase_id": "={{$json.id}}",
+          "name": "={{$json.name || $json.razon_social}}",
+          "tax_id": "={{$json.nit}}",
+          "email": "={{$json.email}}",
+          "phone": "={{$json.telefono}}",
+          "address": "={{$json.direccion}}",
+          "contact_person": "={{$json.persona_contacto}}"
+        },
+        "onConflict": "firebase_id"
+      },
+      "id": "p1o2s3t4-g5r6-e7s8-9012-u1v2w3x4y5z6",
+      "name": "Postgres: Upsert Customers",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [550, 300],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "collection": "ventas"
+      },
+      "id": "v1e2n3t4-a5s6-e7r8-p901-o2r3t4h5i6j7",
+      "name": "Firebase: Get Sales",
+      "type": "n8n-nodes-base.googleFirebase",
+      "typeVersion": 1,
+      "position": [300, 500],
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "YOUR_FIREBASE_CREDENTIAL_ID"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": "elspec",
+        "table": "sales",
+        "columns": "firebase_id,total_amount,currency,status,quotation_ref",
+        "values": {
+          "firebase_id": "={{$json.id}}",
+          "total_amount": "={{$json.total || 0}}",
+          "currency": "={{$json.moneda || 'COP'}}",
+          "status": "={{$json.status || 'draft'}}",
+          "quotation_ref": "={{$json.nro_cotizacion}}"
+        },
+        "onConflict": "firebase_id"
+      },
+      "id": "p2o3s4t5-g6r7-e8s9-0123-u2v3w4x5y6z7",
+      "name": "Postgres: Upsert Sales",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [550, 500],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID"
+        }
+      }
+    }
+    ,
+    {
+      "parameters": {
+        "operation": "getAll",
+        "collection": "tickets"
+      },
+      "id": "t1i2c3k4-e5s6-7f8a-9b0c-d1e2f3g4h5i6",
+      "name": "Firebase: Get Tickets",
+      "type": "n8n-nodes-base.googleFirebase",
+      "typeVersion": 1,
+      "position": [300, 700],
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "YOUR_FIREBASE_CREDENTIAL_ID"
+        }
+      }
+    }
+    ,
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": "elspec",
+        "table": "tickets",
+        "columns": "firebase_id,title,description,type,status,priority,is_deleted,created_at,updated_at",
+        "values": {
+          "firebase_id": "={{$json.id}}",
+          "title": "={{$json.title || 'Ticket sin título'}}",
+          "description": "={{$json.description || $json.desc || ''}}",
+          "type": "={{$json.type || 'soporte'}}",
+          "status": "={{$json.status || 'open'}}",
+          "priority": "={{$json.priority || 'medium'}}",
+          "is_deleted": "={{$json.deleted === true}}",
+          "created_at": "={{$json.createdAt || $json.created_at || new Date().toISOString()}}",
+          "updated_at": "={{$json.updatedAt || $json.updated_at || new Date().toISOString()}}"
+        },
+        "onConflict": "firebase_id"
+      },
+      "id": "p1o2s3t4-uu5p6-tick7-ets8-9a0b",
+      "name": "Postgres: Upsert Tickets",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [550, 700],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID"
+        }
+      }
+    }
+    ,
+    {
+      "parameters": {
+        "operation": "getAll",
+        "collection": "computers"
+      },
+      "id": "c1o2m3p4-u5t6-ers7-8a9b",
+      "name": "Firebase: Get Computers",
+      "type": "n8n-nodes-base.googleFirebase",
+      "typeVersion": 1,
+      "position": [300, 900],
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "YOUR_FIREBASE_CREDENTIAL_ID"
+        }
+      }
+    }
+    ,
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": "elspec",
+        "table": "computers",
+        "columns": "firebase_id,serial_number,brand,model,assigned_user_id,status,is_deleted,created_at,updated_at",
+        "values": {
+          "firebase_id": "={{$json.id}}",
+          "serial_number": "={{$json.serial || $json.serial_number || ''}}",
+          "brand": "={{$json.brand || ''}}",
+          "model": "={{$json.model || ''}}",
+          "assigned_user_id": "={{Array.isArray($json.assignedTo) ? ($json.assignedTo[0] && $json.assignedTo[0].id ? $json.assignedTo[0].id : null) : ($json.assignedTo || null)}}",
+          "status": "={{$json.status || $json.estado || 'Active'}}",
+          "is_deleted": "={{$json.deleted === true}}",
+          "created_at": "={{$json.createdAt || $json.created_at || new Date().toISOString()}}",
+          "updated_at": "={{$json.updatedAt || $json.updated_at || new Date().toISOString()}}"
+        },
+        "onConflict": "firebase_id"
+      },
+      "id": "p1o2s3t4-u5p6-comp7-8c9d",
+      "name": "Postgres: Upsert Computers",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [550, 900],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID"
+        }
+      }
+    }
+    ,
+    {
+      "parameters": {
+        "operation": "getAll",
+        "collection": "sgi_processes"
+      },
+      "id": "s1g2i3-p4r5-o6c7",
+      "name": "Firebase: Get SGI Processes",
+      "type": "n8n-nodes-base.googleFirebase",
+      "typeVersion": 1,
+      "position": [300, 1100],
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "YOUR_FIREBASE_CREDENTIAL_ID"
+        }
+      }
+    }
+    ,
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": "elspec",
+        "table": "sgi_processes",
+        "columns": "firebase_id,name,description,created_at,updated_at",
+        "values": {
+          "firebase_id": "={{$json.id}}",
+          "name": "={{$json.name || 'Proceso sin nombre'}}",
+          "description": "={{$json.description || ''}}",
+          "created_at": "={{$json.createdAt || new Date().toISOString()}}",
+          "updated_at": "={{$json.updatedAt || new Date().toISOString()}}"
+        },
+        "onConflict": "firebase_id"
+      },
+      "id": "p1o2s3t4-s5g6i7p8-r9",
+      "name": "Postgres: Upsert SGI Processes",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [550, 1100],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID"
+        }
+      }
+    }
+    ,
+    {
+      "parameters": {
+        "operation": "getAll",
+        "collection": "sgi_evidence"
+      },
+      "id": "s1g2i3-e4v5-d6",
+      "name": "Firebase: Get SGI Evidence",
+      "type": "n8n-nodes-base.googleFirebase",
+      "typeVersion": 1,
+      "position": [300, 1300],
+      "credentials": {
+        "googleFirebaseCloudFirestoreApi": {
+          "id": "YOUR_FIREBASE_CREDENTIAL_ID"
+        }
+      }
+    }
+    ,
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO elspec.sgi_evidence (firebase_id, process_id, indicator_id, month, file_url, comment, author_id, timestamp) VALUES ('{{$json.id}}', (SELECT id FROM elspec.sgi_processes WHERE firebase_id = '{{$json.processId}}' LIMIT 1), '{{$json.indicatorId || ''}}', '{{`${($json.year || new Date().getFullYear()).toString()}-${($json.month || 1).toString().padStart(2,'0')}`}}', '{{JSON.stringify($json.attachments || [])}}', '{{($json.comment || '').replace(/'/g, \"''\")}}', '{{ $json.leaderId || '' }}', '{{ $json.timestamp || new Date().toISOString() }}') ON CONFLICT (firebase_id) DO UPDATE SET process_id = (SELECT id FROM elspec.sgi_processes WHERE firebase_id = '{{$json.processId}}' LIMIT 1), indicator_id = '{{$json.indicatorId || ''}}', month = '{{`${($json.year || new Date().getFullYear()).toString()}-${($json.month || 1).toString().padStart(2,'0')}`}}', file_url = '{{JSON.stringify($json.attachments || [])}}', comment = '{{($json.comment || '').replace(/'/g, \"''\")}}', author_id = '{{ $json.leaderId || '' }}', timestamp = '{{ $json.timestamp || new Date().toISOString() }}';"
+      },
+      "id": "p1o2s3t4-s5g6i7e8-v9",
+      "name": "Postgres: Upsert SGI Evidence",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [550, 1300],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Firebase: Get Users",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Firebase: Get Customers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Firebase: Get Sales",
+            "type": "main",
+            "index": 0
+          }
+          ,
+          {
+            "node": "Firebase: Get Tickets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Firebase: Get Computers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Firebase: Get SGI Processes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Firebase: Get SGI Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Firebase: Get Users": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Upsert Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Firebase: Get Customers": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Upsert Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Firebase: Get Sales": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Upsert Sales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+    ,
+    "Firebase: Get Tickets": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Upsert Tickets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Firebase: Get Computers": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Upsert Computers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Firebase: Get SGI Processes": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Upsert SGI Processes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Firebase: Get SGI Evidence": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Upsert SGI Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -12,8 +12,12 @@ const Settings = ({ user }) => {
 
     // AI Config State
     const [geminiKey, setGeminiKey] = useState('');
+    const [googleKey, setGoogleKey] = useState('');
+    const [googleCx, setGoogleCx] = useState('');
     const [savingKey, setSavingKey] = useState(false);
+    const [savingGoogle, setSavingGoogle] = useState(false);
     const [keyMsg, setKeyMsg] = useState('');
+    const [googleMsg, setGoogleMsg] = useState('');
 
     const handlePasswordChange = async (e) => {
         e.preventDefault();
@@ -54,6 +58,8 @@ const Settings = ({ user }) => {
                 const config = await db.getGlobalConfig();
                 if (config) {
                     if (config.geminiApiKey) setGeminiKey(config.geminiApiKey);
+                    if (config.googleApiKey) setGoogleKey(config.googleApiKey);
+                    if (config.googleCx) setGoogleCx(config.googleCx);
                 }
             };
             loadConfig();
@@ -73,6 +79,25 @@ const Settings = ({ user }) => {
             setKeyMsg('❌ Error al guardar la clave.');
         } finally {
             setSavingKey(false);
+        }
+    };
+
+    const handleSaveGoogleKeys = async (e) => {
+        e.preventDefault();
+        setSavingGoogle(true);
+        setGoogleMsg('');
+        try {
+            await db.updateGlobalConfig({ 
+                googleApiKey: googleKey,
+                googleCx: googleCx
+            });
+            setGoogleMsg('✅ Credenciales de Google guardadas.');
+            setTimeout(() => setGoogleMsg(''), 3000);
+        } catch (error) {
+            console.error("Error saving Google Keys", error);
+            setGoogleMsg('❌ Error al guardar las credenciales.');
+        } finally {
+            setSavingGoogle(false);
         }
     };
 
@@ -193,6 +218,43 @@ const Settings = ({ user }) => {
                                 {migrateMsg}
                             </p>
                         )}
+                    </div>
+
+                    {/* Google Search Configuration */}
+                    <div style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px', padding: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                            <Database size={18} color="#3b82f6" />
+                            <h5 style={{ margin: 0, fontSize: '0.95rem', color: '#3b82f6' }}>Google Custom Search (Prospect Finder)</h5>
+                        </div>
+                        <p style={{ margin: '0 0 12px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                            Configura las credenciales de Google Search (Opcional, ahora usamos DuckDuckGo Scraper por defecto).
+                        </p>
+                        <form onSubmit={handleSaveGoogleKeys} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label style={{ fontSize: '0.8rem' }}>Google API Key</label>
+                                <input
+                                    type="password"
+                                    value={googleKey}
+                                    onChange={(e) => setGoogleKey(e.target.value)}
+                                    placeholder="AIza..."
+                                    style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
+                                />
+                            </div>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label style={{ fontSize: '0.8rem' }}>Search Engine ID (CX)</label>
+                                <input
+                                    type="text"
+                                    value={googleCx}
+                                    onChange={(e) => setGoogleCx(e.target.value)}
+                                    placeholder="65c3..."
+                                    style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
+                                />
+                            </div>
+                            <button type="submit" disabled={savingGoogle} style={{ background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
+                                {savingGoogle ? '⏳ Guardando...' : 'Guardar Credenciales Google'}
+                            </button>
+                        </form>
+                        {googleMsg && <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem', color: googleMsg.startsWith('✅') ? '#10b981' : '#ef4444' }}>{googleMsg}</p>}
                     </div>
 
                     {/* AI Configuration */}

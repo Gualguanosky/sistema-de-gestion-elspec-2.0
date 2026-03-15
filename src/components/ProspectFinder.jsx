@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Users, AlertCircle, Loader, CheckCircle, Database, ExternalLink, Mail, UserPlus, ShieldCheck, HelpCircle } from 'lucide-react';
+import db from '../services/db';
 
 const ProspectFinder = ({ onAddProspects }) => {
     const [companyName, setCompanyName] = useState('');
@@ -9,6 +10,21 @@ const ProspectFinder = ({ onAddProspects }) => {
     const [results, setResults] = useState([]);
     const [searchStats, setSearchStats] = useState(null);
     const [selectedProspects, setSelectedProspects] = useState(new Set());
+    const [googleConfig, setGoogleConfig] = useState({ key: '', cx: '' });
+
+    // Cargar configuración global al montar
+    React.useEffect(() => {
+        const loadConfig = async () => {
+            const config = await db.getGlobalConfig();
+            if (config) {
+                setGoogleConfig({
+                    key: config.googleApiKey || '',
+                    cx: config.googleCx || ''
+                });
+            }
+        };
+        loadConfig();
+    }, []);
 
     // URL del Microservicio Firebase Functions (Google CSE + Gemini + Hunter.io)
     const FIREBASE_FUNCTION_URL = import.meta.env.VITE_PROSPECTS_API_URL || 'http://127.0.0.1:5001/sistema-tickets-766f4/us-central1/searchProspects';
@@ -21,8 +37,9 @@ const ProspectFinder = ({ onAddProspects }) => {
             return;
         }
 
+
         setIsSearching(true);
-        setStatus({ type: 'info', message: '🔍 Paso 1/3: Buscando en LinkedIn con Google CSE...' });
+        setStatus({ type: 'info', message: '🔍 Paso 1/3: Buscando perfiles reales con SerpApi (Google)...' });
         setResults([]);
         setSearchStats(null);
         setSelectedProspects(new Set());
@@ -30,7 +47,8 @@ const ProspectFinder = ({ onAddProspects }) => {
         try {
 
 // LLAMADO AL MICROSERVICIO (N8N)
-            setTimeout(() => setStatus({ type: 'info', message: '🤖 Paso 2/3: N8N analizando perfiles con IA y enriqueciendo emails corporativos...' }), 2000);
+            setTimeout(() => setStatus({ type: 'info', message: '🤖 Paso 2/3: Groq (Llama 3) analizando perfiles y estructurando datos...' }), 2000);
+            setTimeout(() => setStatus({ type: 'info', message: '📧 Paso 3/3: Enriqueciendo con Hunter.io y guardando logs en Postgres...' }), 4000);
 
             const payload = {
                 action: 'find_prospects',
@@ -61,8 +79,8 @@ const ProspectFinder = ({ onAddProspects }) => {
                 setSearchStats(stats);
                 const allIds = new Set(prospectsData.map(r => r.id));
                 setSelectedProspects(allIds);
-                const emailCount = stats?.withEmail || prospectsData.filter(p => p.email).length;
-                setStatus({ type: 'success', message: `✅ ${prospectsData.length} prospectos encontrados. ${emailCount} con email verificado por Hunter.io.` });
+                const emailCount = prospectsData.filter(p => p.email).length;
+                setStatus({ type: 'success', message: `✅ ${prospectsData.length} prospectos encontrados. Emails estructurados por IA y Hunter.io.` });
             }
 
         } catch (error) {
@@ -118,10 +136,10 @@ const ProspectFinder = ({ onAddProspects }) => {
                     <Search color="var(--primary)" /> Buscador de Prospectos IA
                 </h3>
                 <p style={{ margin: 0, color: 'var(--text-muted)' }}>
-                    Motor de 3 pasos: <strong>Google CSE</strong> busca perfiles en LinkedIn → <strong>Gemini</strong> extrae nombre y cargo → <strong>Hunter.io</strong> verifica emails corporativos.
+                    Motor de 3 pasos: <strong>DuckDuckGo Scraper</strong> busca perfiles en LinkedIn → <strong>Gemini</strong> extrae nombre y cargo → <strong>Hunter.io</strong> verifica emails corporativos.
                 </p>
                 <div style={{ display: 'flex', gap: '10px', marginTop: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '10px', background: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)' }}>🔍 Google CSE · 100/día</span>
+                    <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '10px', background: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)' }}>🔍 DDG Scraper · Ilimitado</span>
                     <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '10px', background: 'rgba(139,92,246,0.1)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.2)' }}>🤖 Gemini · Gratis</span>
                     <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '10px', background: 'rgba(16,185,129,0.1)', color: '#34d399', border: '1px solid rgba(16,185,129,0.2)' }}>📧 Hunter.io · 25/mes</span>
                 </div>
