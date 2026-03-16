@@ -117,15 +117,22 @@ CREATE TABLE IF NOT EXISTS elspec.sgi_evidence (
 CREATE TABLE IF NOT EXISTS elspec.tickets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     firebase_id VARCHAR(100) UNIQUE,
-    user_id UUID REFERENCES elspec.users(id),
+    user_id UUID REFERENCES elspec.users(id), -- Author
+    customer_id UUID REFERENCES elspec.customers(id),
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    type VARCHAR(50), -- soporte, etc.
+    type VARCHAR(50), 
     status VARCHAR(50) DEFAULT 'open',
     priority VARCHAR(20) DEFAULT 'normal',
     is_deleted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS elspec.ticket_assignments (
+    ticket_id UUID REFERENCES elspec.tickets(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES elspec.users(id) ON DELETE CASCADE,
+    PRIMARY KEY (ticket_id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS elspec.computers (

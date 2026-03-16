@@ -1,0 +1,17 @@
+[
+  {
+    "firebase_id": "G5zVNhkJUVkAnGsn5O4e",
+    "createdAt": "2026-02-18T19:42:38.666Z",
+    "date": "2026-02-19",
+    "linkedIndicatorId": "",
+    "location": "oficina",
+    "description": "salida",
+    "status": "scheduled",
+    "type": "Medición",
+    "client": "",
+    "createdBy": "servidor",
+    "personnel": [
+      "Ana Idarraga"
+    ]
+  }
+]

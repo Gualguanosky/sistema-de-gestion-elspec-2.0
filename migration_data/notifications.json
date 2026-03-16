@@ -1,0 +1,94 @@
+[
+  {
+    "firebase_id": "ALNJ8cMmYbftUZV2h3Fn",
+    "createdAt": "2026-02-24T02:29:19.284Z",
+    "message": "La venta para el cliente prueba3 ha sido generada por Alejandro Castañeda Gualguan y requiere revisión.",
+    "title": "Nueva Venta Creada",
+    "type": "sale_created",
+    "readBy": [
+      "VLutQG4fdTtBZd0OWa0V",
+      "n3yFr9JsOzaIQWzpT8cS"
+    ],
+    "targetRoles": [
+      "logistica",
+      "admin"
+    ],
+    "saleId": "58VHGxzEGZUYia173xux"
+  },
+  {
+    "firebase_id": "KnaQhKn5akMf8UlkNnjJ",
+    "targetRoles": [
+      "logistica",
+      "admin"
+    ],
+    "saleId": "wyFT2QuV97ZllDDB11F9",
+    "readBy": [
+      "VLutQG4fdTtBZd0OWa0V",
+      "n3yFr9JsOzaIQWzpT8cS"
+    ],
+    "title": "Nueva Venta Creada",
+    "type": "sale_created",
+    "createdAt": "2026-02-24T02:30:28.903Z",
+    "message": "La venta para el cliente test1 ha sido generada por Alejandro Castañeda Gualguan y requiere revisión."
+  },
+  {
+    "firebase_id": "UYam01JYHOkDL4PL4HF4",
+    "readBy": [
+      "VLutQG4fdTtBZd0OWa0V",
+      "n3yFr9JsOzaIQWzpT8cS"
+    ],
+    "saleId": "fkhD6ffl5Z42LAl6rENY",
+    "targetRoles": [
+      "logistica",
+      "admin"
+    ],
+    "createdAt": "2026-02-24T02:24:58.487Z",
+    "message": "La venta para el cliente prueba 3 ha sido generada por Alejandro Castañeda Gualguan y requiere revisión.",
+    "title": "Nueva Venta Creada",
+    "type": "sale_created"
+  },
+  {
+    "firebase_id": "XNihu2VFmWY4zi2RWsUR",
+    "saleId": "yhVW9UMTYfdzfKIt8qEr",
+    "targetRoles": [
+      "logistica",
+      "admin"
+    ],
+    "readBy": [],
+    "title": "Nueva Venta Creada",
+    "type": "sale_created",
+    "createdAt": "2026-02-24T05:06:42.987Z",
+    "message": "La venta para el cliente test1 ha sido generada por Alejandro Castañeda Gualguan y requiere revisión."
+  },
+  {
+    "firebase_id": "jRToIL6599a21saMoOfz",
+    "readBy": [
+      "n3yFr9JsOzaIQWzpT8cS",
+      "VLutQG4fdTtBZd0OWa0V"
+    ],
+    "targetRoles": [
+      "logistica",
+      "admin"
+    ],
+    "saleId": "mpsr57o12xXLJkXq0v8y",
+    "message": "La venta para el cliente test1 ha sido generada por Alejandro Castañeda Gualguan y requiere revisión.",
+    "createdAt": "2026-02-24T02:35:33.103Z",
+    "type": "sale_created",
+    "title": "Nueva Venta Creada"
+  },
+  {
+    "firebase_id": "mbYUyuSvdF7S5f35Ps4D",
+    "targetRoles": [
+      "logistica",
+      "admin"
+    ],
+    "saleId": "zWi24jmgz16G6RGUNfFz",
+    "readBy": [
+      "n3yFr9JsOzaIQWzpT8cS"
+    ],
+    "type": "sale_created",
+    "title": "Nueva Venta Creada",
+    "message": "La venta para el cliente elspec ha sido generada por Valentina Navia y requiere revisión.",
+    "createdAt": "2026-02-24T18:52:20.464Z"
+  }
+]

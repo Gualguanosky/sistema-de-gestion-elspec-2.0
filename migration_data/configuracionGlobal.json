@@ -1,0 +1,28 @@
+[
+  {
+    "firebase_id": "default",
+    "CARGO_10": 0.1,
+    "CARGO_011": 0.0011,
+    "CARGO_04": 0.004,
+    "PORCENTAJE_COMISION_GLOBAL": 0.0025,
+    "geminiApiKey": "AIzaSyAEuxyzwRvIDrUMV3HNZNN25XUPGihBsgE",
+    "CARGO_04_MINIMO": 220000,
+    "COMISION_MINIMA": 50,
+    "lastUpdated": "2026-02-23T19:56:31.334Z",
+    "IVA": 0.19,
+    "TRANSPORTE": {
+      "MARITIMO": {
+        "ADICIONAL": 0.1,
+        "FACTOR_2": 4,
+        "MULTIPLICADOR": 1.2,
+        "IVA": 0.19,
+        "FACTOR_1": 90
+      },
+      "AEREO": {
+        "MULTIPLICADOR": 1.18,
+        "FACTOR_1": 2.2,
+        "FACTOR_2": 0.5
+      }
+    }
+  }
+]
