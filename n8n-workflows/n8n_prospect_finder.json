@@ -1,0 +1,251 @@
+{
+  "name": "Elspec — Buscador de Prospectos v2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "elspec-find-prospects",
+        "options": {}
+      },
+      "id": "prospect-webhook",
+      "name": "Webhook: Buscar Prospectos",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://html.duckduckgo.com/html/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "=site:linkedin.com/in \"{{ $json.body.companyName }}\" {{ $json.body.targetRoles ? $json.body.targetRoles.split(',').map(r => `\"${r.trim()}\"`).join(' OR ') : '' }}"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {}
+        }
+      },
+      "id": "prospect-scraper",
+      "name": "DuckDuckGo Scraper (Gratis)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "extractionValues": {
+          "values": [
+            {
+              "key": "title",
+              "cssSelector": "a.result__a"
+            },
+            {
+              "key": "link",
+              "cssSelector": "a.result__a",
+              "returnValue": "attribute"
+            },
+            {
+              "key": "snippet",
+              "cssSelector": ".result__snippet"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prospect-extract",
+      "name": "Extraer Datos (HTML)",
+      "type": "n8n-nodes-base.htmlExtract",
+      "typeVersion": 1,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={{$env.GEMINI_API_KEY}}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents.0.parts.0.text",
+              "value": "=Eres un experto extractor de datos B2B. A continuación te proporciono resultados de búsqueda web para la empresa: {{ $('Webhook: Buscar Prospectos').item.json.body.companyName }}\n\nExtrae personas y cargos. Devuelve SOLO un array JSON con estos campos:\n- \"name\": Nombre completo\n- \"role\": Cargo o título\n- \"linkedin\": URL de LinkedIn\n- \"companyDomain\": Dominio principal de la empresa\n- \"industry\": \"{{ $('Webhook: Buscar Prospectos').item.json.body.companyName }}\"\n\nDatos:\n{{ JSON.stringify($input.all().map(item => ({ titulo: item.json.title, snippet: item.json.snippet, link: item.json.link }))) }}\n\nOJO: SOLO devuelve el JSON RAW, sin markdown, sin explicaciones."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prospect-gemini",
+      "name": "Gemini (Parsear Resultados)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [950, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const rawAiText = $json.candidates?.[0]?.content?.parts?.[0]?.text || $json.content?.parts?.[0]?.text || $json.text || '[]';\n  // Limpieza robusta de Markdown JSON\n  let cleanJsonText = rawAiText.replace(/^[\\s\\S]*?```(?:json)?\\n?/i, ''); \n  cleanJsonText = cleanJsonText.replace(/\\n?```[\\s\\S]*$/i, '');\n  cleanJsonText = cleanJsonText.trim();\n  \n  if (!cleanJsonText.startsWith('[')) cleanJsonText = '[' + cleanJsonText;\n  if (!cleanJsonText.endsWith(']')) cleanJsonText = cleanJsonText + ']';\n\n  const results = JSON.parse(cleanJsonText);\n  \n  if (Array.isArray(results) && results.length > 0) {\n    return results.map(p => ({ json: p }));\n  } else {\n     return [{ json: { name: 'Sin resultados', error: 'Gemini no encontró prospectos', role: 'N/A', industry: 'N/A', companyDomain: '' } }];\n  }\n} catch (e) {\n  return [{ json: { name: 'Error de formato', error: e.message, role: 'Error', industry: 'N/A', companyDomain: '' } }];\n}"
+      },
+      "id": "prospect-split",
+      "name": "Separar Prospectos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.hunter.io/v2/domain-search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "domain",
+              "value": "={{ $json.companyDomain }}"
+            },
+            {
+              "name": "api_key",
+              "value": "={{ $env.HUNTER_API_KEY }}"
+            },
+            {
+              "name": "limit",
+              "value": "10"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prospect-hunter",
+      "name": "Hunter.io (Buscar Email)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1450, 300],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prospect = $('Separar Prospectos').item.json;\nconst hunterData = $json.data?.emails || [];\nconst pattern = $json.data?.pattern || '{first}.{last}';\n\nlet bestEmail = null;\nlet source = 'not_found';\n\nconst cleanStr = (str) => (str || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/\\s/g, '');\nconst fnRaw = prospect.name ? prospect.name.split(' ')[0] : '';\nconst lnRaw = prospect.name ? (prospect.name.split(' ').slice(1).join(' ') || '') : '';\nconst fn = cleanStr(fnRaw);\nconst ln = cleanStr(lnRaw.split(' ')[0]);\n\n// 1. Match exacto en Hunter\nif (hunterData.length > 0 && prospect.name) {\n  const match = hunterData.find(e => \n    (fn && cleanStr(e.first_name).includes(fn)) || \n    (ln && cleanStr(e.last_name).includes(ln))\n  );\n  if (match) {\n    bestEmail = match.value;\n    source = 'hunter_io';\n  }\n}\n\n// 2. Fallback IA: Adivinar correo con patrón del dominio\nif (!bestEmail && fn && prospect.companyDomain) {\n    let guessed = '';\n    if (pattern.includes('{first}.{last}')) guessed = `${fn}.${ln}`;\n    else if (pattern.includes('{f}{last}')) guessed = `${fn.charAt(0)}${ln}`;\n    else if (pattern.includes('{first}{last}')) guessed = `${fn}${ln}`;\n    else if (pattern.includes('{first}_{last}')) guessed = `${fn}_${ln}`;\n    else if (pattern.includes('{last}{first}')) guessed = `${ln}${fn}`;\n    else guessed = `${fn}.${ln}`;\n    \n    guessed = guessed.replace(/^\\.|\\.$/, '');\n    bestEmail = `${guessed}@${prospect.companyDomain}`;\n    source = 'ia_estimado';\n}\n\nreturn {\n  ...prospect,\n  email: bestEmail,\n  emailSource: source,\n  id: Math.random().toString(36).substring(2, 9)\n};"
+      },
+      "id": "prospect-merge",
+      "name": "Merge Hunter + IA Fallback",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1700, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "return { prospects: $input.all().map(i => i.json) };"
+      },
+      "id": "prospect-aggregate",
+      "name": "Agrupar Array Final",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1950, 300]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseBody": "={{$json}}"
+        }
+      },
+      "id": "prospect-respond",
+      "name": "Responder al Frontend",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2200, 300]
+    }
+  ],
+  "connections": {
+    "Webhook: Buscar Prospectos": {
+      "main": [
+        [
+          {
+            "node": "DuckDuckGo Scraper (Gratis)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DuckDuckGo Scraper (Gratis)": {
+      "main": [
+        [
+          {
+            "node": "Extraer Datos (HTML)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos (HTML)": {
+      "main": [
+        [
+          {
+            "node": "Gemini (Parsear Resultados)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini (Parsear Resultados)": {
+      "main": [
+        [
+          {
+            "node": "Separar Prospectos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar Prospectos": {
+      "main": [
+        [
+          {
+            "node": "Hunter.io (Buscar Email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hunter.io (Buscar Email)": {
+      "main": [
+        [
+          {
+            "node": "Merge Hunter + IA Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Hunter + IA Fallback": {
+      "main": [
+        [
+          {
+            "node": "Agrupar Array Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agrupar Array Final": {
+      "main": [
+        [
+          {
+            "node": "Responder al Frontend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {}
+}

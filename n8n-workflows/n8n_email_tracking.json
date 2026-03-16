@@ -1,0 +1,96 @@
+{
+  "name": "Elspec — Tracking de Emails v2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "elspec-track-open",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "track-webhook",
+      "name": "Webhook: Pixel de Tracking",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "webhookId": "elspec-track-open"
+    },
+    {
+      "parameters": {
+        "respondWith": "redirect",
+        "redirectUrl": "https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png",
+        "options": {}
+      },
+      "id": "track-redirect",
+      "name": "Responder: Pixel 1x1 (Invisible)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [450, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  campaignId: $input.item.json.query.campaignId || 'desconocido',\n  email: $input.item.json.query.email || '',\n  timestamp: new Date().toISOString()\n};"
+      },
+      "id": "track-extract",
+      "name": "Extraer Datos del Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 400]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO elspec.campaign_stats (campaign_id, email, event_type, created_at) VALUES ($1, $2, 'open', NOW()) ON CONFLICT DO NOTHING",
+        "parameters": {
+          "parameter": [
+            {
+              "name": "campaign_id",
+              "value": "={{ $json.campaignId }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $json.email }}"
+            }
+          ]
+        }
+      },
+      "id": "track-db",
+      "name": "Registrar Apertura en PostgreSQL",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.2,
+      "position": [700, 400],
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Webhook: Pixel de Tracking": {
+      "main": [
+        [
+          {
+            "node": "Responder: Pixel 1x1 (Invisible)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extraer Datos del Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos del Query": {
+      "main": [
+        [
+          {
+            "node": "Registrar Apertura en PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {}
+}

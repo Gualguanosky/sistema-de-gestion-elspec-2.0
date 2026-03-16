@@ -1,0 +1,220 @@
+{
+  "name": "Elspec — Lanzador de Campañas v2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "elspec-launch-campaign",
+        "options": {}
+      },
+      "id": "campaign-webhook",
+      "name": "Webhook: Lanzar Campaña",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseBody": "{\"message\": \"Campaña encolada correctamente. Los correos se enviarán en segundo plano.\"}"
+        }
+      },
+      "id": "campaign-respond-early",
+      "name": "Responder OK al Frontend",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [450, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const actualData = $input.all()[0].json.body;\nconst contacts = actualData.contacts || [];\nreturn contacts.map(c => {\n  return {\n    json: {\n      ...actualData,\n      ...c,\n      contacts: undefined\n    }\n  };\n});"
+      },
+      "id": "campaign-split",
+      "name": "Separar Contactos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.aiEngine }}",
+              "value2": "gemini"
+            }
+          ]
+        }
+      },
+      "id": "campaign-if",
+      "name": "IF: ¿Usar Gemini?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [700, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={{$env.GEMINI_API_KEY}}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents.0.parts.0.text",
+              "value": "=Eres el asesor técnico de ELSPEC ANDINA. Genera el cuerpo de un correo comercial en fragmento HTML para el sector: {{ $json.industry }}\n\nREGLAS:\n- SOLO devuelve el fragmento HTML del contenido (sin etiquetas html, head o body).\n- Secciones: Saludo personalizado para {{ $json.name }}, 3 necesidades críticas del sector, cómo Elspec resuelve esto, CTA de diagnóstico gratuito.\n- Estilo profesional, cálido y persuasivo."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "campaign-gemini",
+      "name": "Gemini (Redactar Email)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [950, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "prompt": "=Eres {{ $('Separar Contactos').item.json.senderName }}, asesor técnico de Elspec Andina. Redacta un correo HTML profesional y persuasivo para {{ $('Separar Contactos').item.json.name }}, una empresa del sector {{ $('Separar Contactos').item.json.industry }} en Colombia. Destaca 3 necesidades eléctricas críticas del sector y cómo Elspec las resuelve. Solo devuelve el fragmento HTML del contenido.",
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "campaign-openai",
+      "name": "OpenAI (Redactar Email)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [950, 500]
+    },
+    {
+      "parameters": {
+        "amount": "={{ $('Separar Contactos').item.json.delayAmount || 5 }}",
+        "unit": "={{ $('Separar Contactos').item.json.delayUnit || 'seconds' }}"
+      },
+      "id": "campaign-wait",
+      "name": "Pausa Anti-Spam",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1200, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const originalData = $('Separar Contactos').item.json;\nconst rawAiText = $json.candidates?.[0]?.content?.parts?.[0]?.text ||\n  $json.content?.parts?.[0]?.text ||\n  $json.choices?.[0]?.message?.content ||\n  $json.choices?.[0]?.text ||\n  $json.output || '<p>Contenido no generado</p>';\n\nconst contentFragment = rawAiText\n  .replace(/^```html\\n?/i, '').replace(/^```\\n?/i, '').replace(/\\n?```$/i, '').trim();\n\nconst vendorName = originalData.senderName || 'Equipo Comercial';\nconst vendorEmail = originalData.senderEmail || 'ventas@elspecandina.com';\nconst industry = originalData.industry || 'su sector';\nconst email = originalData.email || '';\nconst campaignId = originalData.campaignId || '';\n\nconst trackingPixelUrl = `https://n8n.gestionelspec.site/webhook/elspec-track-open?campaignId=${campaignId}&email=${encodeURIComponent(email)}`;\nconst formUrl = `https://elspec-formulario.web.app?email=${encodeURIComponent(email)}&vendedor=${encodeURIComponent(vendorEmail)}&vendedorNombre=${encodeURIComponent(vendorName)}&industry=${encodeURIComponent(industry)}`;\n\nconst fullHtml = `<!DOCTYPE html>\n<html lang=\"es\"><head><meta charset=\"UTF-8\">\n<title>Soluciones para el sector ${industry} | ELSPEC ANDINA</title></head>\n<body style=\"margin:0;padding:0;background-color:#f4f4f4;font-family:Arial,Helvetica,sans-serif;\">\n<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#f4f4f4;padding:20px 0;\">\n<tr><td align=\"center\">\n<table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);\">\n  <tr>\n    <td style=\"background:linear-gradient(135deg,#1a237e 0%,#283593 60%,#1565c0 100%);padding:25px 40px;text-align:center;\">\n      <img src=\"https://www.elspecandina.com.co/wp-content/uploads/2021/05/aw3.jpg\" alt=\"ELSPEC ANDINA\" style=\"height:70px;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;border-radius:4px;\">\n      <h1 style=\"color:#ffffff;margin:0;font-size:26px;font-weight:bold;letter-spacing:1px;\">ELSPEC ANDINA</h1>\n      <p style=\"color:#90caf9;margin:6px 0 0;font-size:13px;letter-spacing:2px;text-transform:uppercase;\">Soluciones en Calidad de Energía Eléctrica</p>\n    </td>\n  </tr>\n  <tr><td style=\"padding:30px 40px;\">${contentFragment}</td></tr>\n  <tr>\n    <td style=\"padding:20px 40px 30px;text-align:center;\">\n      <a href=\"${formUrl}\" style=\"background:linear-gradient(135deg,#1565c0,#1a237e);color:#ffffff;padding:14px 35px;border-radius:25px;text-decoration:none;font-size:15px;font-weight:bold;display:inline-block;\">📋 Solicitar Diagnóstico Gratuito</a>\n    </td>\n  </tr>\n  <tr><td style=\"padding:0 40px;\"><hr style=\"border:none;border-top:1px solid #e0e0e0;\"></td></tr>\n  <tr>\n    <td style=\"padding:25px 40px;\">\n      <table cellpadding=\"0\" cellspacing=\"0\"><tr>\n        <td style=\"border-left:4px solid #1565c0;padding-left:15px;\">\n          <p style=\"margin:0;font-weight:bold;font-size:16px;color:#1a237e;\">${vendorName}</p>\n          <p style=\"margin:3px 0 0;font-size:13px;color:#666;\">Asesor Técnico Comercial | ELSPEC ANDINA S.A.S.</p>\n          <p style=\"margin:3px 0 0;font-size:13px;color:#1565c0;\">📧 ${vendorEmail}</p>\n          <p style=\"margin:3px 0 0;font-size:13px;color:#666;\">🌐 https://www.elspecandina.com.co/ | 📍 Colombia</p>\n        </td>\n      </tr></table>\n    </td>\n  </tr>\n  <tr>\n    <td style=\"background:#1a237e;padding:20px 40px;text-align:center;\">\n      <p style=\"color:#90caf9;font-size:11px;margin:0;\">© 2025 ELSPEC ANDINA S.A.S. | Calidad de Energía para la Industria Colombiana</p>\n      <p style=\"color:#5c6bc0;font-size:10px;margin:5px 0 0;\">Si no deseas recibir más información, responde con \"Cancelar suscripción\".</p>\n    </td>\n  </tr>\n</table></td></tr></table>\n<!-- Tracking Pixel (Invisible) -->\n<img src=\"${trackingPixelUrl}\" alt=\"\" width=\"1\" height=\"1\" style=\"display:none !important;visibility:hidden;opacity:0;\" />\n</body></html>`;\n\nreturn { \n  json: {\n    ...originalData, \n    finalHtml: fullHtml,\n    vendedorNombre: vendorName,\n    vendedorEmail: vendorEmail\n  }\n};"
+      },
+      "id": "campaign-construct",
+      "name": "Construir Email HTML Completo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1450, 400]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $json.vendedorEmail }}",
+        "toEmail": "={{ $json.email }}",
+        "subject": "=Soluciones para el sector {{ $json.industry }} — ELSPEC ANDINA",
+        "html": "={{ $json.finalHtml }}",
+        "options": {
+          "replyTo": "={{ $json.vendedorEmail }}"
+        }
+      },
+      "id": "campaign-send",
+      "name": "Enviar Correo (SMTP)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1700, 400]
+    }
+  ],
+  "connections": {
+    "Webhook: Lanzar Campaña": {
+      "main": [
+        [
+          {
+            "node": "Responder OK al Frontend",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Separar Contactos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar Contactos": {
+      "main": [
+        [
+          {
+            "node": "IF: ¿Usar Gemini?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: ¿Usar Gemini?": {
+      "main": [
+        [
+          {
+            "node": "Gemini (Redactar Email)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OpenAI (Redactar Email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini (Redactar Email)": {
+      "main": [
+        [
+          {
+            "node": "Pausa Anti-Spam",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI (Redactar Email)": {
+      "main": [
+        [
+          {
+            "node": "Pausa Anti-Spam",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pausa Anti-Spam": {
+      "main": [
+        [
+          {
+            "node": "Construir Email HTML Completo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir Email HTML Completo": {
+      "main": [
+        [
+          {
+            "node": "Enviar Correo (SMTP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {}
+}

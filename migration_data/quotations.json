@@ -1,0 +1,28 @@
+[
+  {
+    "firebase_id": "xpw2wQcokAA6Py7JcTIw",
+    "createdAt": "2026-02-18T02:25:03.685Z",
+    "total": 1000000,
+    "notes": "ASD",
+    "number": "COT-2026-0001",
+    "items": [
+      {
+        "description": "ASDASD",
+        "id": 1771381472108,
+        "quantity": 1,
+        "unitPrice": 1000000
+      }
+    ],
+    "createdBy": "alejandro",
+    "client": {
+      "idNumber": "ASD",
+      "city": "ASD",
+      "phone": "ASD",
+      "address": "ASD",
+      "email": "ASD@HOTMAIL.COM",
+      "name": "ASDASD"
+    },
+    "deleted": false,
+    "createdByName": "Alejandro castañeda"
+  }
+]

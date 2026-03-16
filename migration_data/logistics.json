@@ -1,0 +1,41 @@
+[
+  {
+    "firebase_id": "5DK11RtSZSGxww2DblKu",
+    "date_po": "",
+    "remarks": "Sync automática desde ERP. Cantidad: 1",
+    "createdAt": "2026-03-11T02:10:31.530Z",
+    "order_no": "",
+    "status": "EN PLANIFICACION",
+    "compliance": "PROJECT",
+    "date_delivered": "",
+    "requisition": "",
+    "project": "osKAAkFGzudQhuQUt4PB",
+    "delay_time": "",
+    "saleId": "m7bzSYyFhPQRc19X4pml",
+    "author": "alejandro",
+    "description": "AP-COM-75-15-3-380.60-P7-WFSA-4BI20NN",
+    "customer": "RIO PAILA",
+    "delivery_condition": "",
+    "estimated_delivery": ""
+  },
+  {
+    "firebase_id": "wDwn8BIBsNJp2fBcJGkD",
+    "delivery_condition": "",
+    "estimated_delivery": "",
+    "author": "alejandro",
+    "description": "AP-COM-90-30-2-380.60-P7-WFSA-4BI20NN",
+    "customer": "RIO PAILA",
+    "saleId": "m7bzSYyFhPQRc19X4pml",
+    "delay_time": "",
+    "updatedAt": "2026-03-11T02:27:48.374Z",
+    "date_delivered": "",
+    "requisition": "",
+    "project": "osKAAkFGzudQhuQUt4PB",
+    "compliance": "PROJECT",
+    "status": "EN PLANIFICACION",
+    "order_no": "",
+    "date_po": "",
+    "remarks": "Sync automática desde ERP. Cantidad: 1",
+    "createdAt": "2026-03-11T02:10:31.740Z"
+  }
+]
