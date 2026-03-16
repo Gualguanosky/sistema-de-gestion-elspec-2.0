@@ -9,16 +9,17 @@ services:
     networks: [ elspec-net ]
 
   db:
-    image: postgres:16
+    image: mariadb:11.6
     container_name: elspec-db
     restart: always
     ports:
-      - "5432:5432"
+      - "3306:3306"
     environment:
-      POSTGRES_USER: n8n_user
-      POSTGRES_PASSWORD: n8n_password_elspec
-      POSTGRES_DB: n8n_data
-    volumes: [ './db_data:/var/lib/postgresql/data' ]
+      MARIADB_ROOT_PASSWORD: n8n_password_elspec
+      MARIADB_DATABASE: elspec_db
+      MARIADB_USER: n8n_user
+      MARIADB_PASSWORD: n8n_password_elspec
+    volumes: [ './mysql_data:/var/lib/mysql' ]
     networks: [ elspec-net ]
 
   n8n:
@@ -32,14 +33,14 @@ services:
       - N8N_BASE_URL=https://n8n.gestionelspec.site/
       - N8N_CORS_ALLOWED_ORIGINS=*
       - WEBHOOK_URL=https://n8n.gestionelspec.site/
-      - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_DATABASE=n8n_data
-      - DB_POSTGRESDB_HOST=db
-      - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_USER=n8n_user
-      - DB_POSTGRESDB_PASSWORD=n8n_password_elspec
-      - GEMINI_API_KEY=AIzaSyA9alcMCjXy5ifh_-uRUVP91lofHAwcjVQ
-      - HUNTER_API_KEY=0aa3be971b5e23ce516e21fa248e2d39feab52eb
+      - DB_TYPE=mysqldb
+      - DB_MYSQLDB_DATABASE=elspec_db
+      - DB_MYSQLDB_HOST=db
+      - DB_MYSQLDB_PORT=3306
+      - DB_MYSQLDB_USER=n8n_user
+      - DB_MYSQLDB_PASSWORD=n8n_password_elspec
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - HUNTER_API_KEY=${HUNTER_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
     volumes: [ './n8n_data:/home/node/.n8n', '/var/www/elspec/storage:/home/node/storage' ]
@@ -67,8 +68,8 @@ services:
       - DB_HOST=db
       - DB_USER=n8n_user
       - DB_PASSWORD=n8n_password_elspec
-      - DB_NAME=n8n_data
-      - DB_PORT=5432
+      - DB_NAME=elspec_db
+      - DB_PORT=3306
     networks: [ elspec-net ]
     depends_on: [ db ]
 
