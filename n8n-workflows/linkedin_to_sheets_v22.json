@@ -1,0 +1,291 @@
+{
+  "name": "LinkedIn + AI + Hunter - MASTER v22 (SYNC + SCALE)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "interval": 1
+            }
+          ]
+        }
+      },
+      "id": "node-1",
+      "name": "Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 2",
+        "options": {}
+      },
+      "id": "node-2",
+      "name": "Read_Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        300,
+        300
+      ],
+      "settings": {
+        "alwaysOutputData": true
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyCi7p6Gxc_fwB9kCbNtrIVN8k67FprHsWs",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={{ [{\n  \"parts\": [{\n    \"text\": \"Eres un estratega de prospección corporativa. Tu objetivo es elegir la MEJOR empresa colombiana para investigar hoy. \\n\\nLISTA DE EMPRESAS (Muestra): [Ecopetrol, Bancolombia, Grupo Aval, Suramericana, ISA, Nutresa, Grupo Argos, EPM, Avianca, Terpel, Alpina, Claro Colombia, Postobon, Bavaria, Celsia, Promigas, Banco de Bogota, Davivienda, Enel Colombia, Cementos Argos, Alqueria, Grupo Bolivar, Corficolombiana, Mineros, Tecnoglass, Valorem, Carvajal, Colombina, Manuelita, Riopaila Castilla, Sodimac, Alkosto, Grupo Exito, Colpatria, Scotiabank, BBVA Colombia, Tigo, Movistar, ETB, Drummond, Cerrejon, Pacific Rubiales, Frontera Energy, Gran Tierra, Mansarovar, Parex, Canacol, Hocol, Schlumberger, Halliburton, Weatherford, Baker Hughes, Tenaris, Ternium, Gerdau Diaco, Ferrasa, Acesco, Monomeros, Yara Colombia, Syngenta, Corteva, Bayer Colombia, Basf Colombia, Dow Colombia, 3M Colombia, Siemens Colombia, ABB Colombia, Schneider Electric, Legrand, Eaton, General Electric, Philips Colombia, Samsung Colombia, LG Colombia, Huawei Colombia, Oracle Colombia, IBM Colombia, Microsoft Colombia, Google Colombia, Amazon Colombia, Mercadolibre Colombia, Rappi, Globant, Softserve, Endava, Perficient, EPAM, Sura Asset Management, Porvenir, Proteccion, Skandia, Colfondos, Seguros Bolivar, Mapfre Colombia, Allianz Colombia, Liberty Seguros, Chubb Colombia, Axa Colpatria, Previsora, Solidaria].\\n\\nINDICACIONES: \\n1. Puedes elegir CUALQUIERA de la lista anterior o CUALQUIER otra gran empresa líder en Colombia/LATAM (Ejem: Softtek, Stefanini, Indra).\\n2. Revisa el HISTORIAL RECIENTE para no repetir: \" + JSON.stringify($json) + \" \\n3. Elige una que no se haya buscado hoy o tenga pocos leads encontrados.\\n\\nResponde SOLO JSON: {\\\"name\\\": \\\"Nombre Real\\\", \\\"domain\\\" : \\\"dominio.com\\\"}\"\n  }]\n}] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-3",
+      "name": "Selector",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const content = $json.candidates[0].content.parts[0].text;\nconst jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\nreturn JSON.parse(jsonMatch ? jsonMatch[0] : \"{}\");"
+      },
+      "id": "node-4",
+      "name": "Format_Selection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://serpapi.com/search.json?engine=google&q=site:linkedin.com/in \"Gerente\" OR \"Director\" OR \"CEO\" \"{{ $json.name }}\"&api_key=7db43b470e02c158500b63bb69483d396c541d4964fb29ba10dc24810aaad59b&google_domain=google.com.co&gl=co",
+        "options": {}
+      },
+      "id": "node-5",
+      "name": "LinkedIn_Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyCi7p6Gxc_fwB9kCbNtrIVN8k67FprHsWs",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={{ [{\n  \"parts\": [{\n    \"text\": \"Extrae personas (firstName, lastName, cargo, linkedinURL). Resultados: \" + JSON.stringify($json.organic_results || []) + \" Responde SOLO JSON Array.\"\n  }]\n}] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-6",
+      "name": "AI_Extraction",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const content = $json.candidates[0].content.parts[0].text;\n  const jsonMatch = content.match(/\\[[\\s\\S]*\\]/);\n  const jsonStr = jsonMatch ? jsonMatch[0] : \"[]\";\n  return JSON.parse(jsonStr).map(p => ({ json: { ...p } }));\n} catch (e) {\n  return [];\n}"
+      },
+      "id": "node-7",
+      "name": "Format_List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 1",
+        "options": {}
+      },
+      "id": "node-8",
+      "name": "Read_Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const existingLeads = $input.all();\nconst currentBatch = $(\"Format_List\").all();\nconst existingNames = existingLeads.map(l => `${l.json.Nombre} ${l.json.Apellido}`.toLowerCase().trim());\nreturn currentBatch.filter(lead => {\n  const fullName = `${lead.json.firstName} ${lead.json.lastName}`.toLowerCase().trim();\n  return !existingNames.includes(fullName);\n});"
+      },
+      "id": "node-9",
+      "name": "Filter_Dupes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.hunter.io/v2/email-finder?domain={{ $(\"Format_Selection\").first().json.domain }}&first_name={{ $json.firstName }}&last_name={{ $json.lastName }}&api_key=0aa3be971b5e23ce516e21fa248e2d39feab52eb",
+        "options": {}
+      },
+      "id": "node-10",
+      "name": "Hunter_Finder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let email = $json.data.email;\nlet status = \"Hunter\";\nif (!email) {\n  const p = $(\"Filter_Dupes\").item.json;\n  const dom = $(\"Format_Selection\").first().json.domain;\n  email = `${p.firstName.toLowerCase()}.${p.lastName.toLowerCase()}@${dom}`;\n  status = \"IA-Pattern\";\n}\nconst fd = $(\"Filter_Dupes\").item.json;\nreturn {\n  email, status, \n  firstName: fd.firstName,\n  lastName: fd.lastName,\n  cargo: fd.cargo,\n  company: $(\"Format_Selection\").first().json.name,\n  linkedin: fd.linkedinURL\n};"
+      },
+      "id": "node-11",
+      "name": "Recovery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 1",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+            "Nombre": "={{ $json.firstName }}",
+            "Apellido": "={{ $json.lastName }}",
+            "Email": "={{ $json.email }}",
+            "Cargo": "={{ $json.cargo }}",
+            "Empresa": "={{ $json.company }}",
+            "LinkedIn": "={{ $json.linkedin }}",
+            "Confianza Email": "={{ $json.status }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "node-12",
+      "name": "Save_to_Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2300,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "leads",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nombre": "={{ $json.firstName }}",
+            "apellido": "={{ $json.lastName }}",
+            "email": "={{ $json.email }}",
+            "cargo": "={{ $json.cargo }}",
+            "empresa": "={{ $json.company }}",
+            "linkedin": "={{ $json.linkedin }}",
+            "status": "={{ $json.status }}",
+            "createdAt": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}"
+          }
+        }
+      },
+      "id": "node-14",
+      "name": "Sync_to_MariaDB",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.1,
+      "position": [
+        2300,
+        400
+      ],
+      "credentials": {
+        "mySql": {
+          "host": "db",
+          "database": "elspec_db",
+          "user": "n8n_user",
+          "password": "n8n_password_elspec"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 2",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Empresa": "={{ $(\"Format_Selection\").first().json.name }}",
+            "Ultima_Fecha": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+            "Leads_Encontrados": "={{ $(\"Recovery\").all().length }}",
+            "Estado": "={{ $(\"Recovery\").all().length > 0 ? 'Activo' : 'Agotado?' }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "node-13",
+      "name": "Update_Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2500,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Trigger": { "main": [ [ { "node": "Read_Log", "type": "main", "index": 0 } ] ] },
+    "Read_Log": { "main": [ [ { "node": "Selector", "type": "main", "index": 0 } ] ] },
+    "Selector": { "main": [ [ { "node": "Format_Selection", "type": "main", "index": 0 } ] ] },
+    "Format_Selection": { "main": [ [ { "node": "LinkedIn_Search", "type": "main", "index": 0 } ] ] },
+    "LinkedIn_Search": { "main": [ [ { "node": "AI_Extraction", "type": "main", "index": 0 } ] ] },
+    "AI_Extraction": { "main": [ [ { "node": "Format_List", "type": "main", "index": 0 } ] ] },
+    "Format_List": { "main": [ [ { "node": "Read_Leads", "type": "main", "index": 0 } ] ] },
+    "Read_Leads": { "main": [ [ { "node": "Filter_Dupes", "type": "main", "index": 0 } ] ] },
+    "Filter_Dupes": { "main": [ [ { "node": "Hunter_Finder", "type": "main", "index": 0 } ] ] },
+    "Hunter_Finder": { "main": [ [ { "node": "Recovery", "type": "main", "index": 0 } ] ] },
+    "Recovery": { "main": [ [ { "node": "Save_to_Sheets", "type": "main", "index": 0 }, { "node": "Sync_to_MariaDB", "type": "main", "index": 0 } ] ] },
+    "Save_to_Sheets": { "main": [ [ { "node": "Update_Log", "type": "main", "index": 0 } ] ] }
+  },
+  "active": true,
+  "settings": {}
+}

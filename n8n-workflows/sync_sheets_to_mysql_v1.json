@@ -1,0 +1,95 @@
+{
+  "name": "Sync: Google Sheets -> MariaDB (Decoupled)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "interval": 1
+            }
+          ]
+        }
+      },
+      "id": "sync-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "documentId": "11aTJIKWq-WKini5bsvwOrj6_topnvLPMOm4nXSKQMcI",
+        "sheetName": "leads",
+        "options": {}
+      },
+      "id": "sync-sheets-read",
+      "name": "Read Google Sheets (leads)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "leads",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nombre": "={{ $json.Nombre }}",
+            "apellido": "={{ $json.Apellido }}",
+            "email": "={{ $json.Email }}",
+            "cargo": "={{ $json.Cargo }}",
+            "empresa": "={{ $json.Empresa }}",
+            "linkedin": "={{ $json.LinkedIn }}",
+            "status": "New",
+            "createdAt": "={{ $json.Fecha || $now.format('yyyy-MM-dd HH:mm:ss') }}"
+          }
+        }
+      },
+      "id": "sync-mysql-insert",
+      "name": "Insert into MariaDB",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.1,
+      "position": [550, 300],
+      "credentials": {
+        "mySql": {
+          "host": "187.124.152.139",
+          "database": "elspec_db",
+          "user": "n8n_user",
+          "password": "n8n_password_elspec"
+        }
+      },
+      "settings": {
+        "errorHandling": "continue"
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Google Sheets (leads)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Google Sheets (leads)": {
+      "main": [
+        [
+          {
+            "node": "Insert into MariaDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

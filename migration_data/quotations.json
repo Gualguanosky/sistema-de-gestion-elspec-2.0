@@ -1,28 +1,28 @@
 [
   {
     "firebase_id": "xpw2wQcokAA6Py7JcTIw",
-    "createdAt": "2026-02-18T02:25:03.685Z",
+    "createdBy": "alejandro",
     "total": 1000000,
-    "notes": "ASD",
     "number": "COT-2026-0001",
     "items": [
       {
         "description": "ASDASD",
+        "unitPrice": 1000000,
         "id": 1771381472108,
-        "quantity": 1,
-        "unitPrice": 1000000
+        "quantity": 1
       }
     ],
-    "createdBy": "alejandro",
+    "deleted": false,
     "client": {
-      "idNumber": "ASD",
-      "city": "ASD",
       "phone": "ASD",
+      "name": "ASDASD",
+      "idNumber": "ASD",
       "address": "ASD",
       "email": "ASD@HOTMAIL.COM",
-      "name": "ASDASD"
+      "city": "ASD"
     },
-    "deleted": false,
+    "createdAt": "2026-02-18T02:25:03.685Z",
+    "notes": "ASD",
     "createdByName": "Alejandro castañeda"
   }
 ]

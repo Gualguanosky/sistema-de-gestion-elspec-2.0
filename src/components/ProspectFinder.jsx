@@ -27,7 +27,7 @@ const ProspectFinder = ({ onAddProspects }) => {
     }, []);
 
     // URL del Microservicio Firebase Functions (Google CSE + Gemini + Hunter.io)
-    const FIREBASE_FUNCTION_URL = import.meta.env.VITE_PROSPECTS_API_URL || 'http://127.0.0.1:5001/sistema-tickets-766f4/us-central1/searchProspects';
+    const FIREBASE_FUNCTION_URL = '/api/n8n/elspec-find-prospects';
 
     const handleSearch = async (e) => {
         e.preventDefault();
@@ -56,7 +56,7 @@ const ProspectFinder = ({ onAddProspects }) => {
                 targetRoles: roles.trim()
             };
 
-            const response = await fetch(import.meta.env.VITE_PROSPECTS_API_URL, {
+            const response = await fetch(FIREBASE_FUNCTION_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

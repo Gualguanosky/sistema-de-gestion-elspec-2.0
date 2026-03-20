@@ -1,0 +1,1 @@
+INSERT INTO projects (id, name, customer, status, description, linkedSaleId, targetDate, createdBy, createdByName, createdAt) VALUES ('osKAAkFGzudQhuQUt4PB', 'ODEN 5040', 'RIO PAILA', 'PLANIFICACION', '', 'm7bzSYyFhPQRc19X4pml', '2026-03-31', 'alejandro', 'Alejandro', '2026-03-11 02:07:53') ON DUPLICATE KEY UPDATE name=VALUES(name);

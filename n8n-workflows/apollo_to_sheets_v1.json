@@ -1,0 +1,152 @@
+{
+  "name": "Apollo to Google Sheets - Lead Gen Autónomo",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "interval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apollo.io/v1/mixed_people/search",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "_sufujIOgLV0Q9QWQtoGIA"
+            },
+            {
+              "name": "person_titles",
+              "value": "CEO, CTO, Founder, Director, Manager, Gerente, Compras"
+            },
+            {
+              "name": "organization_num_employees_ranges",
+              "value": "1001-5000, 5001-10000, 10001+"
+            },
+            {
+              "name": "page",
+              "value": "={{ ($workflow.staticData.last_page || 0) + 1 }}"
+            },
+            {
+              "name": "per_page",
+              "value": "50"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "apollo-search",
+      "name": "Apollo: Buscar Prospectos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        350,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json.people || [];\n// Actualizar la última página procesada en el estado estático del workflow\n$workflow.staticData.last_page = ($workflow.staticData.last_page || 0) + 1;\nreturn data.map(p => ({ json: p }));"
+      },
+      "id": "code-split-update",
+      "name": "Separar y Actualizar Pagina",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 1",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+            "Nombre": "={{ $json.first_name }}",
+            "Apellido": "={{ $json.last_name }}",
+            "Email": "={{ $json.email }}",
+            "Cargo": "={{ $json.title }}",
+            "Empresa": "={{ $json.organization?.name }}",
+            "LinkedIn": "={{ $json.linkedin_url }}",
+            "Ubicación": "={{ $json.city ? $json.city + ', ' : '' }}{{ $json.state ? $json.state + ', ' : '' }}{{ $json.country }}",
+            "Industria": "={{ $json.organization?.industry }}",
+            "Tamaño Empresa": "={{ $json.organization?.estimated_num_employees }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "google-sheets-append",
+      "name": "Google Sheets: Guardar Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        850,
+        300
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "TU_ID_DE_CREDENCIAL_GOOGLE",
+          "name": "Google Sheets Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Apollo: Buscar Prospectos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apollo: Buscar Prospectos": {
+      "main": [
+        [
+          {
+            "node": "Separar y Actualizar Pagina",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar y Actualizar Pagina": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets: Guardar Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

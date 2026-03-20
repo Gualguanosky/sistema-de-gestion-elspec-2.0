@@ -1,19 +1,19 @@
 [
   {
     "firebase_id": "ALNJ8cMmYbftUZV2h3Fn",
-    "createdAt": "2026-02-24T02:29:19.284Z",
-    "message": "La venta para el cliente prueba3 ha sido generada por Alejandro Castañeda Gualguan y requiere revisión.",
-    "title": "Nueva Venta Creada",
-    "type": "sale_created",
-    "readBy": [
-      "VLutQG4fdTtBZd0OWa0V",
-      "n3yFr9JsOzaIQWzpT8cS"
-    ],
     "targetRoles": [
       "logistica",
       "admin"
     ],
-    "saleId": "58VHGxzEGZUYia173xux"
+    "createdAt": "2026-02-24T02:29:19.284Z",
+    "saleId": "58VHGxzEGZUYia173xux",
+    "title": "Nueva Venta Creada",
+    "message": "La venta para el cliente prueba3 ha sido generada por Alejandro Castañeda Gualguan y requiere revisión.",
+    "type": "sale_created",
+    "readBy": [
+      "VLutQG4fdTtBZd0OWa0V",
+      "n3yFr9JsOzaIQWzpT8cS"
+    ]
   },
   {
     "firebase_id": "KnaQhKn5akMf8UlkNnjJ",
@@ -21,60 +21,60 @@
       "logistica",
       "admin"
     ],
+    "createdAt": "2026-02-24T02:30:28.903Z",
+    "title": "Nueva Venta Creada",
     "saleId": "wyFT2QuV97ZllDDB11F9",
+    "message": "La venta para el cliente test1 ha sido generada por Alejandro Castañeda Gualguan y requiere revisión.",
+    "type": "sale_created",
     "readBy": [
       "VLutQG4fdTtBZd0OWa0V",
       "n3yFr9JsOzaIQWzpT8cS"
-    ],
-    "title": "Nueva Venta Creada",
-    "type": "sale_created",
-    "createdAt": "2026-02-24T02:30:28.903Z",
-    "message": "La venta para el cliente test1 ha sido generada por Alejandro Castañeda Gualguan y requiere revisión."
+    ]
   },
   {
     "firebase_id": "UYam01JYHOkDL4PL4HF4",
-    "readBy": [
-      "VLutQG4fdTtBZd0OWa0V",
-      "n3yFr9JsOzaIQWzpT8cS"
-    ],
-    "saleId": "fkhD6ffl5Z42LAl6rENY",
     "targetRoles": [
       "logistica",
       "admin"
     ],
     "createdAt": "2026-02-24T02:24:58.487Z",
+    "readBy": [
+      "VLutQG4fdTtBZd0OWa0V",
+      "n3yFr9JsOzaIQWzpT8cS"
+    ],
     "message": "La venta para el cliente prueba 3 ha sido generada por Alejandro Castañeda Gualguan y requiere revisión.",
-    "title": "Nueva Venta Creada",
-    "type": "sale_created"
+    "type": "sale_created",
+    "saleId": "fkhD6ffl5Z42LAl6rENY",
+    "title": "Nueva Venta Creada"
   },
   {
     "firebase_id": "XNihu2VFmWY4zi2RWsUR",
+    "title": "Nueva Venta Creada",
     "saleId": "yhVW9UMTYfdzfKIt8qEr",
+    "message": "La venta para el cliente test1 ha sido generada por Alejandro Castañeda Gualguan y requiere revisión.",
+    "type": "sale_created",
+    "readBy": [],
     "targetRoles": [
       "logistica",
       "admin"
     ],
-    "readBy": [],
-    "title": "Nueva Venta Creada",
-    "type": "sale_created",
-    "createdAt": "2026-02-24T05:06:42.987Z",
-    "message": "La venta para el cliente test1 ha sido generada por Alejandro Castañeda Gualguan y requiere revisión."
+    "createdAt": "2026-02-24T05:06:42.987Z"
   },
   {
     "firebase_id": "jRToIL6599a21saMoOfz",
+    "message": "La venta para el cliente test1 ha sido generada por Alejandro Castañeda Gualguan y requiere revisión.",
+    "type": "sale_created",
     "readBy": [
       "n3yFr9JsOzaIQWzpT8cS",
       "VLutQG4fdTtBZd0OWa0V"
     ],
+    "saleId": "mpsr57o12xXLJkXq0v8y",
+    "title": "Nueva Venta Creada",
     "targetRoles": [
       "logistica",
       "admin"
     ],
-    "saleId": "mpsr57o12xXLJkXq0v8y",
-    "message": "La venta para el cliente test1 ha sido generada por Alejandro Castañeda Gualguan y requiere revisión.",
-    "createdAt": "2026-02-24T02:35:33.103Z",
-    "type": "sale_created",
-    "title": "Nueva Venta Creada"
+    "createdAt": "2026-02-24T02:35:33.103Z"
   },
   {
     "firebase_id": "mbYUyuSvdF7S5f35Ps4D",
@@ -82,13 +82,13 @@
       "logistica",
       "admin"
     ],
-    "saleId": "zWi24jmgz16G6RGUNfFz",
+    "createdAt": "2026-02-24T18:52:20.464Z",
+    "message": "La venta para el cliente elspec ha sido generada por Valentina Navia y requiere revisión.",
+    "type": "sale_created",
     "readBy": [
       "n3yFr9JsOzaIQWzpT8cS"
     ],
-    "type": "sale_created",
     "title": "Nueva Venta Creada",
-    "message": "La venta para el cliente elspec ha sido generada por Valentina Navia y requiere revisión.",
-    "createdAt": "2026-02-24T18:52:20.464Z"
+    "saleId": "zWi24jmgz16G6RGUNfFz"
   }
 ]

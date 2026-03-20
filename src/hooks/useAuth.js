@@ -29,9 +29,12 @@ const useAuth = () => {
     }, []);
 
     const login = async (username, password) => {
-        // Now loginUser returns the user object (legacy or migrated)
-        // AND sets the Auth state if successful (handled by onAuthStateChanged)
         const userFound = await db.loginUser(username, password);
+        if (userFound) {
+            setUser(userFound);
+            // También forzamos el evento global por si otros componentes escuchan
+            window.dispatchEvent(new Event('auth-status-changed'));
+        }
         return !!userFound;
     };
 

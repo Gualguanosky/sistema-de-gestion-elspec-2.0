@@ -1,0 +1,72 @@
+{
+  "name": "One-Time Sync: Sheets -> MariaDB (Historical Leads)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "node-1",
+      "name": "When_Clicking_Execute",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 1",
+        "options": {}
+      },
+      "id": "node-2",
+      "name": "Read_Everything_from_Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "leads",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nombre": "={{ $json.Nombre }}",
+            "apellido": "={{ $json.Apellido }}",
+            "email": "={{ $json.Email }}",
+            "cargo": "={{ $json.Cargo }}",
+            "empresa": "={{ $json.Empresa }}",
+            "linkedin": "={{ $json.LinkedIn }}",
+            "status": "={{ $json['Confianza Email'] }}",
+            "createdAt": "={{ $json.Fecha }}"
+          }
+        }
+      },
+      "id": "node-3",
+      "name": "Carga_Masiva_MariaDB",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.1,
+      "position": [
+        500,
+        300
+      ],
+      "credentials": {
+        "mySql": {
+          "host": "db",
+          "database": "elspec_db",
+          "user": "n8n_user",
+          "password": "n8n_password_elspec"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When_Clicking_Execute": { "main": [ [ { "node": "Read_Everything_from_Sheets", "type": "main", "index": 0 } ] ] },
+    "Read_Everything_from_Sheets": { "main": [ [ { "node": "Carga_Masiva_MariaDB", "type": "main", "index": 0 } ] ] }
+  },
+  "active": false,
+  "settings": {}
+}

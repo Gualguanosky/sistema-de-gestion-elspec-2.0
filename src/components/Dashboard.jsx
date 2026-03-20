@@ -11,6 +11,7 @@ import SGIUnifiedView from './SGIUnifiedView';
 import OperationsSchedule from './OperationsSchedule';
 import SalesManagement from './SalesManagement';
 import CampaignManagement from './CampaignManagement';
+import LeadKanbanBoard from './LeadKanbanBoard';
 import Settings from './Settings';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import NotificationBell from './NotificationBell';
@@ -47,7 +48,8 @@ import {
     RefreshCw,
     Send,
     Sparkles,
-    BarChart2
+    BarChart2,
+    Target
 } from 'lucide-react';
 import logo from '../assets/logo.svg';
 
@@ -273,7 +275,8 @@ const Dashboard = () => {
         ...(canViewOperations ? [{ id: 'operations', label: 'Operaciones', icon: <Activity size={18} /> }] : []),
         ...(canManageSGI ? [{ id: 'sgi', label: 'Calidad', icon: <ShieldCheck size={18} /> }] : []),
         ...(canManageSales ? [
-            { id: 'sales', label: 'Ventas', icon: <DollarSign size={18} /> }
+            { id: 'sales', label: 'Ventas', icon: <DollarSign size={18} /> },
+            { id: 'crm', label: 'CRM / Leads', icon: <Target size={18} /> }
         ] : []),
         ...(canManageCampaigns ? [
             { id: 'campaigns', label: 'Campañas', icon: <Send size={18} /> }
@@ -614,7 +617,8 @@ const Dashboard = () => {
                                                         activeTab === 'sgi' ? 'Calidad (SGI)' :
                                                             activeTab === 'operations' ? 'Operaciones' :
                                                                     activeTab === 'sales' ? 'Ventas y Cotizaciones' :
-                                                                        activeTab === 'campaigns' ? 'Marketing y Campañas' :
+                                                                        activeTab === 'crm' ? 'Gestión de Prospectos (CRM)' :
+                                                                            activeTab === 'campaigns' ? 'Marketing y Campañas' :
                                                                                 'Panel Control'}
                                 </h2>
                                 <p style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.8rem, 2vw, 1rem)' }}>Mesa de servicios corporativa - ELSPEC ANDINA v2.1</p>
@@ -915,6 +919,9 @@ const Dashboard = () => {
 
                     {/* Sales Dashboard */}
                     {activeTab === 'sales' && canManageSales && <SalesManagement />}
+
+                    {/* CRM Dashboard */}
+                    {activeTab === 'crm' && canManageSales && <LeadKanbanBoard />}
 
                     {/* Campaign Management */}
                     {activeTab === 'campaigns' && canManageCampaigns && <CampaignManagement />}

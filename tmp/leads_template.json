@@ -1,0 +1,34 @@
+[
+  {
+    "id": "lead_001",
+    "title": "Proyecto Mantenimiento Ecopetrol",
+    "description": "Interés en mantenimiento preventivo de subestaciones.",
+    "customerDetails": {
+      "name": "Ecopetrol S.A.",
+      "contact": "Juan Perez",
+      "email": "juan.perez@ecopetrol.com.co",
+      "phone": "+57 321 000 0000"
+    },
+    "assignedTo": "alejandro",
+    "assignedToName": "Alejandro",
+    "status": "NUEVO",
+    "priority": "alta",
+    "value": 5000000
+  },
+  {
+    "id": "lead_002",
+    "title": "Suministro Equipos Siemens",
+    "description": "Cotización de nuevos equipos de protección.",
+    "customerDetails": {
+      "name": "Siemens Colombia",
+      "contact": "Maria Gomez",
+      "email": "m.gomez@siemens.com",
+      "phone": "+57 312 999 9999"
+    },
+    "assignedTo": "alejandro",
+    "assignedToName": "Alejandro",
+    "status": "CALIFICADO",
+    "priority": "media",
+    "value": 12000000
+  }
+]

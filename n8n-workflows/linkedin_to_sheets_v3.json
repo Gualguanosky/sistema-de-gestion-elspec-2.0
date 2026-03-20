@@ -1,0 +1,186 @@
+{
+  "name": "LinkedIn + AI Lead Gen - SerpApi & Gemini",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "interval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const companies = [\n  \"Ecopetrol\", \"Bancolombia\", \"Grupo Aval\", \"Suramericana\", \"ISA\", \"Nutresa\",\n  \"Grupo Argos\", \"Empresas Publicas de Medellin\", \"Avianca\", \"Terpel\",\n  \"Alpina\", \"Claro Colombia\", \"Movistar Colombia\", \"Postobon\", \"Bavaria\"\n];\n\n// Seleccionar una empresa basada en el tiempo actual para que varíe en cada ejecución\nconst index = Math.floor(Date.now() / (1000 * 60 * 60)) % companies.length;\nreturn { company: companies[index] };"
+      },
+      "id": "pick-company",
+      "name": "Seleccionar Empresa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "q": "site:linkedin.com/in \"Gerente\" OR \"Director\" OR \"CEO\" \"{{ $json.company }}\"",
+        "google_domain": "google.com.co",
+        "gl": "co",
+        "hl": "es"
+      },
+      "id": "serpapi-search",
+      "name": "SerpApi: Buscar en LinkedIn",
+      "type": "n8n-nodes-base.serpApi",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ],
+      "credentials": {
+        "serpApi": {
+          "id": "TU_ID_CREDENCIAL_SERPAPI",
+          "name": "SerpApi Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gemini-1.5-flash",
+        "prompt": "Extrae una lista de personas de estos resultados de búsqueda de Google (LinkedIn). Para cada persona, devuelve: nombre, cargo, empresa y URL de LinkedIn.\n\nResultados: {{ JSON.stringify($json.organic_results) }}\n\nResponde SOLO en formato JSON válido (un array de objetos). Ejemplo: [{\"nombre\": \"Juan Perez\", \"cargo\": \"Gerente\", \"empresa\": \"Ecopetrol\", \"linkedin\": \"url\"}]",
+        "options": {}
+      },
+      "id": "gemini-extract",
+      "name": "Gemini: Extraer Datos",
+      "type": "n8n-nodes-base.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ],
+      "credentials": {
+        "googleGeminiApi": {
+          "id": "TU_ID_CREDENCIAL_GEMINI",
+          "name": "Google Gemini Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const result = JSON.parse($json.text || $json.content || \"[]\");\n  return Array.isArray(result) ? result.map(p => ({ json: p })) : [];\n} catch (e) {\n  return [];\n}"
+      },
+      "id": "format-results",
+      "name": "Formatear Listado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 1",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+            "Nombre": "={{ $json.nombre }}",
+            "Cargo": "={{ $json.cargo }}",
+            "Empresa": "={{ $json.empresa }}",
+            "LinkedIn": "={{ $json.linkedin }}",
+            "Fuente": "LinkedIn + AI Search"
+          }
+        },
+        "options": {}
+      },
+      "id": "google-sheets-append",
+      "name": "Google Sheets: Guardar Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1100,
+        300
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "TU_ID_DE_CREDENCIAL_GOOGLE",
+          "name": "Google Sheets Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Seleccionar Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seleccionar Empresa": {
+      "main": [
+        [
+          {
+            "node": "SerpApi: Buscar en LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpApi: Buscar en LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Gemini: Extraer Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini: Extraer Datos": {
+      "main": [
+        [
+          {
+            "node": "Formatear Listado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Listado": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets: Guardar Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

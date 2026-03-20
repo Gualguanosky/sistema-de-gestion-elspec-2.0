@@ -1,0 +1,207 @@
+{
+  "name": "LinkedIn + AI + Hunter - FINAL v11",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "interval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const companies = [\n  { name: \"Ecopetrol\", domain: \"ecopetrol.com.co\" },\n  { name: \"Bancolombia\", domain: \"bancolombia.com\" },\n  { name: \"Grupo Aval\", domain: \"grupoaval.com\" },\n  { name: \"Suramericana\", domain: \"sura.com.co\" },\n  { name: \"ISA\", domain: \"isa.co\" },\n  { name: \"Nutresa\", domain: \"gruponutresa.com\" },\n  { name: \"Grupo Argos\", domain: \"grupoargos.com\" },\n  { name: \"EPM\", domain: \"epm.com.co\" },\n  { name: \"Avianca\", domain: \"avianca.com\" },\n  { name: \"Terpel\", domain: \"terpel.com\" },\n  { name: \"Alpina\", domain: \"alpina.com\" },\n  { name: \"Claro Colombia\", domain: \"claro.com.co\" },\n  { name: \"Postobon\", domain: \"postobon.com\" },\n  { name: \"Bavaria\", domain: \"bavaria.co\" }\n];\n\nconst index = Math.floor(Date.now() / (1000 * 60 * 60)) % companies.length;\nreturn companies[index];"
+      },
+      "id": "pick-company",
+      "name": "Seleccionar Empresa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://serpapi.com/search.json?engine=google&q=site:linkedin.com/in \"Gerente\" OR \"Director\" OR \"CEO\" \"{{ $json.name }}\"&api_key=7db43b470e02c158500b63bb69483d396c541d4964fb29ba10dc24810aaad59b&google_domain=google.com.co&gl=co",
+        "options": {}
+      },
+      "id": "serpapi-http",
+      "name": "HTTP: Buscar en LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=AIzaSyCi7p6Gxc_fwB9kCbNtrIVN8k67FprHsWs",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={{ [{\n  \"parts\": [{\n    \"text\": \"Extrae una lista de personas de estos resultados de búsqueda de Google (LinkedIn). Para cada persona, devuelve: firstName, lastName, cargo y linkedinURL. IMPORTANTE: Separa el nombre en firstName y lastName. Resultados: \" + JSON.stringify($json.organic_results || []) + \" Responde SOLO en formato JSON válido (un array de objetos). Ejemplo: [{\\\"firstName\\\": \\\"Juan\\\", \\\"lastName\\\": \\\"Perez\\\", \\\"cargo\\\": \\\"Gerente\\\", \\\"linkedinURL\\\": \\\"url\\\"}]\"\n  }]\n}] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "gemini-http",
+      "name": "HTTP: Extraer Datos AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const content = $json.candidates[0].content.parts[0].text;\n  const jsonMatch = content.match(/\\[[\\s\\S]*\\]/);\n  const jsonStr = jsonMatch ? jsonMatch[0] : \"[]\";\n  const result = JSON.parse(jsonStr);\n  const domain = $(\"Seleccionar Empresa\").first().json.domain;\n  const companyName = $(\"Seleccionar Empresa\").first().json.name;\n  return result.map(p => ({ json: { ...p, domain, companyName } }));\n} catch (e) {\n  return [];\n}"
+      },
+      "id": "format-results",
+      "name": "Formatear Listado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.hunter.io/v2/email-finder?domain={{ $json.domain }}&first_name={{ $json.firstName }}&last_name={{ $json.lastName }}&api_key=0aa3be971b5e23ce516e21fa248e2d39feab52eb",
+        "options": {}
+      },
+      "id": "hunter-http",
+      "name": "Hunter.io: Encontrar Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 1",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+            "Nombre": "={{ $node[\"format-results\"].json.firstName }} {{ $node[\"format-results\"].json.lastName }}",
+            "Email": "={{ $json.data.email || 'No encontrado' }}",
+            "Cargo": "={{ $node[\"format-results\"].json.cargo }}",
+            "Empresa": "={{ $node[\"format-results\"].json.companyName }}",
+            "LinkedIn": "={{ $node[\"format-results\"].json.linkedinURL }}",
+            "Confianza Email": "={{ $json.data.score || 0 }}%"
+          }
+        },
+        "options": {}
+      },
+      "id": "google-sheets-append",
+      "name": "Google Sheets: Guardar Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1300,
+        300
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "TU_ID_DE_CREDENCIAL_GOOGLE",
+          "name": "Google Sheets Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Seleccionar Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seleccionar Empresa": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Buscar en LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Buscar en LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Extraer Datos AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Extraer Datos AI": {
+      "main": [
+        [
+          {
+            "node": "Formatear Listado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Listado": {
+      "main": [
+        [
+          {
+            "node": "Hunter.io: Encontrar Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hunter.io: Encontrar Email": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets: Guardar Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

@@ -1,329 +1,329 @@
 [
   {
     "firebase_id": "1YQHvpTc4fj2TrkeWQCV",
-    "senderEmail": "valentinan@elspec.com.co",
-    "user": "Alejandro",
     "campaignName": "AS MANTENIMIENTO",
-    "senderName": "Valentina Navia",
-    "timestamp": "2026-03-09T19:45:08.993Z",
-    "delayUnit": "seconds",
-    "aiEngine": "gemini",
     "contacts": [
       {
-        "email": "gualguan9364@gmail.com",
         "name": "Juan perez",
-        "industry": "Mineria"
+        "industry": "Mineria",
+        "email": "gualguan9364@gmail.com"
       }
     ],
+    "user": "Alejandro",
+    "senderEmail": "valentinan@elspec.com.co",
     "status": "started",
     "stats": {
-      "clicked": 0,
-      "replied": 0,
+      "sent": 1,
       "opened": 0,
       "delivered": 0,
-      "sent": 1
+      "replied": 0,
+      "clicked": 0
     },
+    "contactsCount": 1,
     "delayAmount": 1,
-    "contactsCount": 1
+    "timestamp": "2026-03-09T19:45:08.993Z",
+    "aiEngine": "gemini",
+    "delayUnit": "seconds",
+    "senderName": "Valentina Navia"
   },
   {
     "firebase_id": "38gV8s5TK7rcrnq3ycye",
-    "timestamp": "2026-03-09T18:15:34.868Z",
-    "aiEngine": "gemini",
-    "delayUnit": "seconds",
-    "user": "Alejandro",
-    "senderEmail": "valentinan@elspec.com.co",
-    "campaignName": "promo mantenimientoi",
-    "senderName": "Valentina Navia",
+    "delayAmount": 1,
     "stats": {
-      "replied": 0,
-      "opened": 0,
-      "clicked": 0,
       "delivered": 0,
-      "sent": 1
+      "replied": 0,
+      "clicked": 0,
+      "sent": 1,
+      "opened": 0
     },
+    "contactsCount": 1,
+    "senderEmail": "valentinan@elspec.com.co",
     "status": "started",
+    "user": "Alejandro",
     "contacts": [
       {
         "name": "alejandro",
-        "email": "gualguan9364@gmail.com",
-        "industry": "hospitales"
+        "industry": "hospitales",
+        "email": "gualguan9364@gmail.com"
       }
     ],
-    "contactsCount": 1,
-    "delayAmount": 1
+    "campaignName": "promo mantenimientoi",
+    "senderName": "Valentina Navia",
+    "delayUnit": "seconds",
+    "aiEngine": "gemini",
+    "timestamp": "2026-03-09T18:15:34.868Z"
   },
   {
     "firebase_id": "5hrkypHOoKe0iuvTji2x",
-    "user": "Alejandro",
-    "senderEmail": "gualguan93@hotmail.com",
-    "campaignName": "promo mantenimiento subestaciones",
-    "senderName": "Alejandro",
-    "timestamp": "2026-03-09T17:39:56.147Z",
-    "aiEngine": "gemini",
-    "delayUnit": "seconds",
+    "delayAmount": 1,
     "stats": {
-      "sent": 0,
-      "delivered": 0,
       "opened": 0,
+      "sent": 0,
       "replied": 0,
+      "delivered": 0,
       "clicked": 0
     },
+    "contactsCount": 1,
+    "senderEmail": "gualguan93@hotmail.com",
     "status": "started",
+    "campaignName": "promo mantenimiento subestaciones",
+    "user": "Alejandro",
     "contacts": [
       {
+        "email": "gualguan9364@gmail.com",
         "industry": "Mineria",
-        "name": "alejandro castañeda gualguan",
-        "email": "gualguan9364@gmail.com"
+        "name": "alejandro castañeda gualguan"
       }
     ],
-    "contactsCount": 1,
-    "delayAmount": 1
+    "senderName": "Alejandro",
+    "delayUnit": "seconds",
+    "aiEngine": "gemini",
+    "timestamp": "2026-03-09T17:39:56.147Z"
   },
   {
     "firebase_id": "8eyQbC57gWC3pausJJdw",
+    "senderEmail": "felipeo@elspec.com.co",
+    "lastInteraction": "{{ $now }}",
     "delayUnit": "seconds",
-    "aiEngine": "gemini",
+    "status": "started",
     "campaignName": "mantenimineto ",
-    "senderName": "Felipe Orozco",
+    "user": "Alejandro",
     "contacts": [
       {
         "email": "gualguan9364@gmail.com",
-        "name": "Juan perez",
-        "industry": "Mineria"
+        "industry": "Mineria",
+        "name": "Juan perez"
       }
     ],
-    "status": "started",
+    "delayAmount": 1,
+    "contactsCount": 1,
     "stats": {
-      "sent": 1,
+      "replied": 0,
       "delivered": 0,
       "clicked": 0,
       "opened": 1,
-      "replied": 0
+      "sent": 1
     },
-    "lastInteraction": "{{ $now }}",
+    "aiEngine": "gemini",
     "timestamp": "2026-03-09T19:58:32.514Z",
-    "senderEmail": "felipeo@elspec.com.co",
-    "user": "Alejandro",
-    "contactsCount": 1,
-    "delayAmount": 1
+    "senderName": "Felipe Orozco"
   },
   {
     "firebase_id": "97Vd2tGlkUsh7YF9MTGg",
+    "lastInteraction": "{{ $now }}",
+    "senderEmail": "valentinan@elspec.com.co",
+    "delayUnit": "seconds",
+    "stats": {
+      "sent": 1,
+      "opened": 1,
+      "clicked": 0,
+      "delivered": 0,
+      "replied": 0
+    },
+    "contactsCount": 1,
+    "delayAmount": 1,
+    "campaignName": "mantenimiento",
     "contacts": [
       {
+        "email": "gualguan9364@gmail.com",
         "industry": "textil",
-        "name": "Juan perez",
-        "email": "gualguan9364@gmail.com"
+        "name": "Juan perez"
       }
     ],
-    "status": "started",
-    "stats": {
-      "clicked": 0,
-      "opened": 1,
-      "replied": 0,
-      "sent": 1,
-      "delivered": 0
-    },
-    "delayUnit": "seconds",
-    "aiEngine": "gemini",
-    "campaignName": "mantenimiento",
-    "senderName": "Valentina Navia",
-    "delayAmount": 1,
-    "contactsCount": 1,
-    "timestamp": "2026-03-09T20:00:26.257Z",
-    "lastInteraction": "{{ $now }}",
     "user": "Alejandro",
-    "senderEmail": "valentinan@elspec.com.co"
+    "status": "started",
+    "senderName": "Valentina Navia",
+    "timestamp": "2026-03-09T20:00:26.257Z",
+    "aiEngine": "gemini"
   },
   {
     "firebase_id": "DcPcns8o7OYsWWifcuTh",
-    "timestamp": "2026-03-09T19:42:44.816Z",
-    "aiEngine": "gemini",
-    "delayUnit": "seconds",
-    "senderEmail": "felipeo@elspec.com.co",
-    "user": "Alejandro",
     "senderName": "Felipe Orozco",
-    "campaignName": "mantenimiento",
-    "status": "started",
-    "stats": {
-      "sent": 1,
-      "delivered": 0,
-      "opened": 0,
-      "replied": 0,
-      "clicked": 0
-    },
-    "contacts": [
-      {
-        "industry": "mineria",
-        "name": "Juan perez",
-        "email": "gualguan9364@gmail.com"
-      }
-    ],
-    "delayAmount": 1,
-    "contactsCount": 1
-  },
-  {
-    "firebase_id": "FIqkev5mjvtJvq4Fgx5Q",
-    "senderEmail": "andresbu@elspec.com.co",
-    "user": "Alejandro",
-    "timestamp": "2026-03-09T20:14:59.995Z",
-    "lastInteraction": "{{ $now }}",
-    "delayAmount": 1,
-    "contactsCount": 1,
-    "senderName": "Andres Bermudez",
-    "campaignName": "promo mantenimin",
-    "aiEngine": "gemini",
     "delayUnit": "seconds",
-    "status": "started",
+    "aiEngine": "gemini",
+    "timestamp": "2026-03-09T19:42:44.816Z",
+    "delayAmount": 1,
     "stats": {
-      "clicked": 0,
-      "opened": 1,
-      "replied": 0,
       "delivered": 0,
+      "replied": 0,
+      "clicked": 0,
+      "opened": 0,
       "sent": 1
     },
-    "contacts": [
-      {
-        "name": "juan perez",
-        "email": "gualguan9364@gmail.com",
-        "industry": "Mineria"
-      }
-    ]
-  },
-  {
-    "firebase_id": "GO8eXi51ysyqUTEOCgpq",
-    "campaignName": "promo mantenimiento",
-    "senderName": "Valentina Navia",
-    "senderEmail": "valentinan@elspec.com.co",
-    "user": "Alejandro",
-    "delayUnit": "hours",
-    "aiEngine": "gemini",
-    "timestamp": "2026-03-09T18:14:34.035Z",
     "contactsCount": 1,
-    "delayAmount": 10,
-    "contacts": [
-      {
-        "industry": "hospitales",
-        "email": "gualguan9364@gmail.com",
-        "name": "alejanrdro castañeda"
-      }
-    ],
-    "status": "started",
-    "stats": {
-      "delivered": 0,
-      "sent": 1,
-      "clicked": 0,
-      "replied": 0,
-      "opened": 0
-    }
-  },
-  {
-    "firebase_id": "GaW0zFvN6D0JSindle7O",
-    "aiEngine": "gemini",
-    "delayUnit": "seconds",
-    "timestamp": "2026-03-09T18:24:59.059Z",
-    "campaignName": "promo mantenimiento",
-    "senderName": "Felipe Orozco",
-    "user": "Alejandro",
     "senderEmail": "felipeo@elspec.com.co",
-    "contactsCount": 1,
-    "delayAmount": 1,
-    "stats": {
-      "sent": 1,
-      "delivered": 0,
-      "opened": 0,
-      "replied": 0,
-      "clicked": 0
-    },
     "status": "started",
     "contacts": [
       {
-        "name": "juan perez",
         "email": "gualguan9364@gmail.com",
-        "industry": "textil"
-      }
-    ]
-  },
-  {
-    "firebase_id": "ZFLjSebV85WtqS6Tx1sQ",
-    "aiEngine": "gemini",
-    "delayUnit": "seconds",
-    "timestamp": "2026-03-09T18:52:41.849Z",
-    "campaignName": "manteni",
-    "senderName": "Felipe Orozco",
-    "senderEmail": "felipeo@elspec.com.co",
-    "user": "Alejandro",
-    "delayAmount": 1,
-    "contactsCount": 1,
-    "status": "started",
-    "stats": {
-      "delivered": 0,
-      "sent": 1,
-      "opened": 0,
-      "replied": 0,
-      "clicked": 0
-    },
-    "contacts": [
-      {
-        "email": "gualguan9364@gmail.com",
-        "name": "juan perez",
-        "industry": "hospitales"
-      }
-    ]
-  },
-  {
-    "firebase_id": "iG7oM5iFyzt7d0C38TdY",
-    "timestamp": "2026-03-09T19:03:23.431Z",
-    "delayUnit": "seconds",
-    "aiEngine": "gemini",
-    "senderEmail": "felipeo@elspec.com.co",
-    "user": "Alejandro",
-    "campaignName": "promo",
-    "senderName": "Felipe Orozco",
-    "contacts": [
-      {
         "name": "Juan perez",
-        "email": "gualguan9364@gmail.com",
         "industry": "mineria"
       }
     ],
+    "user": "Alejandro",
+    "campaignName": "mantenimiento"
+  },
+  {
+    "firebase_id": "FIqkev5mjvtJvq4Fgx5Q",
+    "delayUnit": "seconds",
+    "senderEmail": "andresbu@elspec.com.co",
+    "lastInteraction": "{{ $now }}",
+    "aiEngine": "gemini",
+    "timestamp": "2026-03-09T20:14:59.995Z",
+    "senderName": "Andres Bermudez",
     "status": "started",
-    "stats": {
-      "clicked": 0,
-      "opened": 0,
-      "replied": 0,
-      "sent": 1,
-      "delivered": 0
-    },
+    "campaignName": "promo mantenimin",
+    "contacts": [
+      {
+        "industry": "Mineria",
+        "name": "juan perez",
+        "email": "gualguan9364@gmail.com"
+      }
+    ],
+    "user": "Alejandro",
     "delayAmount": 1,
+    "stats": {
+      "delivered": 0,
+      "replied": 0,
+      "clicked": 0,
+      "sent": 1,
+      "opened": 1
+    },
     "contactsCount": 1
   },
   {
-    "firebase_id": "rgbsmbP9uKiRo9KY0ZQo",
-    "user": "Alejandro",
-    "senderEmail": "valentinan@elspec.com.co",
-    "campaignName": "promo mantenimiento",
+    "firebase_id": "GO8eXi51ysyqUTEOCgpq",
+    "delayUnit": "hours",
     "senderName": "Valentina Navia",
-    "timestamp": "2026-03-09T18:43:16.533Z",
+    "timestamp": "2026-03-09T18:14:34.035Z",
     "aiEngine": "gemini",
-    "delayUnit": "seconds",
     "stats": {
+      "clicked": 0,
+      "delivered": 0,
       "replied": 0,
       "opened": 0,
-      "clicked": 0,
-      "sent": 1,
-      "delivered": 0
+      "sent": 1
     },
+    "contactsCount": 1,
+    "delayAmount": 10,
+    "campaignName": "promo mantenimiento",
+    "user": "Alejandro",
+    "contacts": [
+      {
+        "industry": "hospitales",
+        "name": "alejanrdro castañeda",
+        "email": "gualguan9364@gmail.com"
+      }
+    ],
+    "senderEmail": "valentinan@elspec.com.co",
+    "status": "started"
+  },
+  {
+    "firebase_id": "GaW0zFvN6D0JSindle7O",
+    "delayAmount": 1,
+    "stats": {
+      "clicked": 0,
+      "delivered": 0,
+      "replied": 0,
+      "sent": 1,
+      "opened": 0
+    },
+    "contactsCount": 1,
+    "senderEmail": "felipeo@elspec.com.co",
     "status": "started",
+    "campaignName": "promo mantenimiento",
     "contacts": [
       {
         "email": "gualguan9364@gmail.com",
-        "name": "Juan perez",
-        "industry": "Mineria"
+        "industry": "textil",
+        "name": "juan perez"
       }
     ],
+    "user": "Alejandro",
+    "senderName": "Felipe Orozco",
+    "delayUnit": "seconds",
+    "aiEngine": "gemini",
+    "timestamp": "2026-03-09T18:24:59.059Z"
+  },
+  {
+    "firebase_id": "ZFLjSebV85WtqS6Tx1sQ",
+    "delayUnit": "seconds",
+    "senderName": "Felipe Orozco",
+    "timestamp": "2026-03-09T18:52:41.849Z",
+    "aiEngine": "gemini",
     "contactsCount": 1,
-    "delayAmount": 1
+    "stats": {
+      "opened": 0,
+      "sent": 1,
+      "clicked": 0,
+      "replied": 0,
+      "delivered": 0
+    },
+    "delayAmount": 1,
+    "campaignName": "manteni",
+    "contacts": [
+      {
+        "email": "gualguan9364@gmail.com",
+        "industry": "hospitales",
+        "name": "juan perez"
+      }
+    ],
+    "user": "Alejandro",
+    "senderEmail": "felipeo@elspec.com.co",
+    "status": "started"
+  },
+  {
+    "firebase_id": "iG7oM5iFyzt7d0C38TdY",
+    "delayAmount": 1,
+    "stats": {
+      "delivered": 0,
+      "replied": 0,
+      "clicked": 0,
+      "opened": 0,
+      "sent": 1
+    },
+    "contactsCount": 1,
+    "senderEmail": "felipeo@elspec.com.co",
+    "status": "started",
+    "campaignName": "promo",
+    "user": "Alejandro",
+    "contacts": [
+      {
+        "email": "gualguan9364@gmail.com",
+        "industry": "mineria",
+        "name": "Juan perez"
+      }
+    ],
+    "senderName": "Felipe Orozco",
+    "delayUnit": "seconds",
+    "aiEngine": "gemini",
+    "timestamp": "2026-03-09T19:03:23.431Z"
+  },
+  {
+    "firebase_id": "rgbsmbP9uKiRo9KY0ZQo",
+    "aiEngine": "gemini",
+    "timestamp": "2026-03-09T18:43:16.533Z",
+    "senderName": "Valentina Navia",
+    "delayUnit": "seconds",
+    "status": "started",
+    "senderEmail": "valentinan@elspec.com.co",
+    "campaignName": "promo mantenimiento",
+    "contacts": [
+      {
+        "name": "Juan perez",
+        "industry": "Mineria",
+        "email": "gualguan9364@gmail.com"
+      }
+    ],
+    "user": "Alejandro",
+    "delayAmount": 1,
+    "stats": {
+      "opened": 0,
+      "sent": 1,
+      "replied": 0,
+      "delivered": 0,
+      "clicked": 0
+    },
+    "contactsCount": 1
   }
 ]

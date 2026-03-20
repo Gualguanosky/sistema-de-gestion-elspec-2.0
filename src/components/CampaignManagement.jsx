@@ -30,7 +30,7 @@ const CampaignManagement = () => {
     const [isLoadingSalespeople, setIsLoadingSalespeople] = useState(false);
     const [selectedSalesperson, setSelectedSalesperson] = useState('');
 
-    const FIREBASE_FUNCTION_URL = import.meta.env.VITE_MARKETING_API_URL || 'http://127.0.0.1:5001/sistema-tickets-766f4/us-central1/marketingService';
+    const FIREBASE_FUNCTION_URL = '/api/n8n/elspec-launch-campaign';
     const N8N_WEBHOOK_URL = FIREBASE_FUNCTION_URL;
 
     // Fetch salespeople immediately so they are available for the dropdown

@@ -1,0 +1,373 @@
+{
+  "name": "LinkedIn + AI + Hunter - MASTER AGENT v17.1 (Conexiones Corregidas)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "interval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 2",
+        "options": {}
+      },
+      "id": "sheets-read-log",
+      "name": "Google Sheets: Leer Reporte",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyCi7p6Gxc_fwB9kCbNtrIVN8k67FprHsWs",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={{ [{\n  \"parts\": [{\n    \"text\": \"Eres un estratega de ventas. Aquí tienes la lista de empresas objetivo: [Ecopetrol, Bancolombia, Grupo Aval, Suramericana, ISA, Nutresa, Grupo Argos, EPM, Avianca, Terpel, Alpina, Claro Colombia, Postobon, Bavaria, Celsia, Promigas, Banco de Bogota, Davivienda, Enel Colombia, Cementos Argos, Alqueria, Grupo Bolivar, Corficolombiana, Mineros, Tecnoglass, Valorem, Carvajal, Colombina, Manuelita, Riopaila Castilla].\\n\\nY aquí tienes el historial de búsquedas recientes: \" + JSON.stringify($node[\"Google Sheets: Leer Reporte\"].all()) + \"\\n\\nDecide qué empresa debemos buscar ahora. PRIORIDAD: 1. Empresas que NO estén en el historial. 2. Empresas con 'Estado' Activo y cuya 'Ultima_Fecha' sea la más antigua. 3. NO repitas empresas marcadas como 'Agotado'.\\n\\nResponde SOLO con un JSON técnico: {\\\"name\\\": \\\"Nombre de Empresa\\\", \\\"domain\\\": \\\"dominio.com\\\"}. Dominios sugeridos: ecopetrol.com.co, bancolombia.com, grupoaval.com, sura.com.co, isa.co, gruponutresa.com, grupoargos.com, epm.com.co, avianca.com, terpel.com, alpina.com, claro.com.co, postobon.com, bavaria.co, celsia.com, promigas.com, bancodebogota.com, davivienda.com, enel.com.co, argos.co, alqueria.com.co, grupobolivar.com, corficolombiana.com, mineros.com.co, tecnoglass.com, valorem.com.co, carvajal.com, colombina.com, manuelita.com, riopaila-castilla.com.\"\n  }]\n}] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "gemini-selector",
+      "name": "Gemini: Seleccionar Empresa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const content = $json.candidates[0].content.parts[0].text;\nconst jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\nreturn JSON.parse(jsonMatch ? jsonMatch[0] : \"{}\");"
+      },
+      "id": "parse-selection",
+      "name": "Parsear Selección",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://serpapi.com/search.json?engine=google&q=site:linkedin.com/in \"Gerente\" OR \"Director\" OR \"CEO\" \"{{ $json.name }}\"&api_key=7db43b470e02c158500b63bb69483d396c541d4964fb29ba10dc24810aaad59b&google_domain=google.com.co&gl=co",
+        "options": {}
+      },
+      "id": "serpapi-http",
+      "name": "HTTP: Buscar en LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyCi7p6Gxc_fwB9kCbNtrIVN8k67FprHsWs",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={{ [{\n  \"parts\": [{\n    \"text\": \"Extrae una lista de personas de estos resultados de búsqueda de Google (LinkedIn). Para cada persona, devuelve: firstName, lastName, cargo y linkedinURL. IMPORTANTE: Separa el nombre en firstName y lastName. Resultados: \" + JSON.stringify($json.organic_results || []) + \" Responde SOLO en formato JSON válido (un array de objetos). Ejemplo: [{\\\"firstName\\\": \\\"Juan\\\", \\\"lastName\\\": \\\"Perez\\\", \\\"cargo\\\": \\\"Gerente\\\", \\\"linkedinURL\\\": \\\"url\\\"}]\"\n  }]\n}] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "gemini-extraction",
+      "name": "HTTP: Extraer Datos AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const content = $json.candidates[0].content.parts[0].text;\n  const jsonMatch = content.match(/\\[[\\s\\S]*\\]/);\n  const jsonStr = jsonMatch ? jsonMatch[0] : \"[]\";\n  const result = JSON.parse(jsonStr);\n  const domain = $(\"Parsear Selección\").first().json.domain;\n  const companyName = $(\"Parsear Selección\").first().json.name;\n  return result.map(p => ({ json: { ...p, domain, companyName } }));\n} catch (e) {\n  return [];\n}"
+      },
+      "id": "format-results",
+      "name": "Formatear Listado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 1",
+        "options": {}
+      },
+      "id": "sheets-read-leads",
+      "name": "Google Sheets: Leer Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const existingLeads = $(\"Google Sheets: Leer Leads\").all();\nconst existingNames = existingLeads.map(l => `${l.json.Nombre} ${l.json.Apellido}`.toLowerCase().trim());\nconst currentBatch = $(\"Formatear Listado\").all();\n\nreturn currentBatch.filter(lead => {\n  const fullName = `${lead.json.firstName} ${lead.json.lastName}`.toLowerCase().trim();\n  return !existingNames.includes(fullName);\n});"
+      },
+      "id": "filter-dupes",
+      "name": "Filtro: Anti-Duplicados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.hunter.io/v2/email-finder?domain={{ $json.domain }}&first_name={{ $json.firstName }}&last_name={{ $json.lastName }}&api_key=0aa3be971b5e23ce516e21fa248e2d39feab52eb",
+        "options": {}
+      },
+      "id": "hunter-http",
+      "name": "Hunter.io: Encontrar Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let email = $json.data.email;\nlet status = \"Verificado (Hunter)\";\nlet confidence = ($json.data.score || 0) + \"%\";\n\nif (!email) {\n  const p = $(\"Filtro: Anti-Duplicados\").item.json;\n  const cleanFirst = p.firstName.toLowerCase().normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g, \"\").replace(/\\s+/g, '');\n  const cleanLast = p.lastName.toLowerCase().normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g, \"\").replace(/\\s+/g, '');\n  email = `${cleanFirst}.${cleanLast}@${p.domain}`;\n  status = \"Deducido (Patron AI)\";\n  confidence = \"70% (Estimado)\";\n}\n\nreturn {\n  email,\n  status,\n  confidence,\n  firstName: $(\"Filtro: Anti-Duplicados\").item.json.firstName,\n  lastName: $(\"Filtro: Anti-Duplicados\").item.json.lastName,\n  cargo: $(\"Filtro: Anti-Duplicados\").item.json.cargo,\n  domain: $(\"Filtro: Anti-Duplicados\").item.json.domain,\n  company: $(\"Filtro: Anti-Duplicados\").item.json.companyName,\n  linkedin: $(\"Filtro: Anti-Duplicados\").item.json.linkedinURL\n};"
+      },
+      "id": "email-recovery",
+      "name": "Deducir Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 1",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+            "Nombre": "={{ $json.firstName }}",
+            "Apellido": "={{ $json.lastName }}",
+            "Email": "={{ $json.email }}",
+            "Cargo": "={{ $json.cargo }}",
+            "Empresa": "={{ $json.company }}",
+            "LinkedIn": "={{ $json.linkedin }}",
+            "Confianza Email": "={{ $json.status }} ({{ $json.confidence }})"
+          }
+        },
+        "options": {}
+      },
+      "id": "sheets-append-leads",
+      "name": "Google Sheets: Guardar Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 2",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Empresa": "={{ $(\"Parsear Selección\").first().json.name }}",
+            "Ultima_Fecha": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+            "Leads_Encontrados": "={{ $(\"Deducir Email\").all().length }}",
+            "Estado": "={{ $(\"Deducir Email\").all().length > 0 ? 'Activo' : 'Agotado?' }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "sheets-update-log",
+      "name": "Google Sheets: Actualizar Reporte",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2500,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "sheets-read-log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sheets-read-log": {
+      "main": [
+        [
+          {
+            "node": "gemini-selector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gemini-selector": {
+      "main": [
+        [
+          {
+            "node": "parse-selection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "parse-selection": {
+      "main": [
+        [
+          {
+            "node": "serpapi-http",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "serpapi-http": {
+      "main": [
+        [
+          {
+            "node": "gemini-extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gemini-extraction": {
+      "main": [
+        [
+          {
+            "node": "format-results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "format-results": {
+      "main": [
+        [
+          {
+            "node": "sheets-read-leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sheets-read-leads": {
+      "main": [
+        [
+          {
+            "node": "filter-dupes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filter-dupes": {
+      "main": [
+        [
+          {
+            "node": "hunter-http",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "hunter-http": {
+      "main": [
+        [
+          {
+            "node": "email-recovery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "email-recovery": {
+      "main": [
+        [
+          {
+            "node": "sheets-append-leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sheets-append-leads": {
+      "main": [
+        [
+          {
+            "node": "sheets-update-log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

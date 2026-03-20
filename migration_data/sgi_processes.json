@@ -1,91 +1,91 @@
 [
   {
     "firebase_id": "ixEMYYmrIQol26IhUGxp",
-    "createdAt": "2026-02-16T20:41:04.299Z",
-    "description": "Gestion de Calidad, Medio Ambiente y Seguridad y Salud en el Trabajo",
-    "indicators": [
-      {
-        "unit": "%",
-        "name": "Gestión ACPM",
-        "target": "90",
-        "id": "1771274563909",
-        "requiresComment": false,
-        "monthlyData": {},
-        "requiresFile": true,
-        "requiresPhoto": false
-      },
-      {
-        "unit": "%",
-        "name": "Cumplimiento de Requisitos Legales",
-        "target": "90",
-        "id": "1771274682498",
-        "requiresFile": true,
-        "monthlyData": {},
-        "requiresPhoto": false,
-        "requiresComment": true
-      },
-      {
-        "requiresPhoto": false,
-        "requiresFile": true,
-        "monthlyData": {},
-        "requiresComment": true,
-        "id": "1771274751044",
-        "target": "100",
-        "unit": "%",
-        "name": "Reporte de Accidentes de trabajo"
-      },
-      {
-        "requiresComment": true,
-        "monthlyData": {},
-        "requiresFile": true,
-        "requiresPhoto": false,
-        "unit": "%",
-        "name": "Numero de accidentes laborales",
-        "target": "10",
-        "id": "1771274799367"
-      },
-      {
-        "frequency": "Mensual",
-        "requiresComment": true,
-        "unit": "m³",
-        "target": "30",
-        "monthlyData": {
-          "01": -1
-        },
-        "requiresPhoto": false,
-        "folder": "",
-        "isCustomUnit": false,
-        "dataSource": "manual",
-        "autoDriver": "",
-        "requiresFile": true,
-        "direction": "maximize",
-        "name": "Consumo de Agua",
-        "id": "1771274858478"
-      }
-    ],
-    "name": "SIG",
     "leaders": [
       {
         "name": "Ana Idarraga",
         "id": "wS0h9I16dy3nWalOMpio"
       }
-    ]
+    ],
+    "indicators": [
+      {
+        "requiresComment": false,
+        "unit": "%",
+        "target": "90",
+        "monthlyData": {},
+        "requiresPhoto": false,
+        "name": "Gestión ACPM",
+        "id": "1771274563909",
+        "requiresFile": true
+      },
+      {
+        "target": "90",
+        "unit": "%",
+        "requiresComment": true,
+        "requiresFile": true,
+        "name": "Cumplimiento de Requisitos Legales",
+        "id": "1771274682498",
+        "requiresPhoto": false,
+        "monthlyData": {}
+      },
+      {
+        "requiresComment": true,
+        "unit": "%",
+        "target": "100",
+        "monthlyData": {},
+        "requiresPhoto": false,
+        "id": "1771274751044",
+        "requiresFile": true,
+        "name": "Reporte de Accidentes de trabajo"
+      },
+      {
+        "monthlyData": {},
+        "name": "Numero de accidentes laborales",
+        "requiresFile": true,
+        "id": "1771274799367",
+        "requiresPhoto": false,
+        "requiresComment": true,
+        "target": "10",
+        "unit": "%"
+      },
+      {
+        "target": "30",
+        "direction": "maximize",
+        "unit": "m³",
+        "autoDriver": "",
+        "requiresComment": true,
+        "requiresPhoto": false,
+        "name": "Consumo de Agua",
+        "isCustomUnit": false,
+        "dataSource": "manual",
+        "folder": "",
+        "frequency": "Mensual",
+        "requiresFile": true,
+        "id": "1771274858478",
+        "monthlyData": {
+          "01": -1
+        }
+      }
+    ],
+    "createdAt": "2026-02-16T20:41:04.299Z",
+    "description": "Gestion de Calidad, Medio Ambiente y Seguridad y Salud en el Trabajo",
+    "name": "SIG"
   },
   {
     "firebase_id": "ypRKZlbRlmuZluwdsANX",
+    "indicators": [],
     "leaderId": "gSoWPl9Pi1mST0jpDw8Y",
     "createdAt": "2026-02-16T19:12:11.762Z",
-    "description": "",
-    "leader": "Alejandro",
     "name": "direccionamiento estrategico",
-    "indicators": []
+    "description": "",
+    "leader": "Alejandro"
   },
   {
     "firebase_id": "zGCtYNnxIloTlt2NRfjD",
-    "createdAt": "2026-02-16T19:02:32.547Z",
-    "description": "Garantizar la sostenibilidad económica de la empresa mediante la formulación, análisis, aprobación y seguimiento del presupuesto de ventas, asegurando el cumplimiento de las metas financieras y estratégicas establecidas.",
     "leader": "Fabian Becerra",
+    "indicators": [],
+    "createdAt": "2026-02-16T19:02:32.547Z",
     "name": "Direccionamiento Estratégico",
-    "indicators": []
+    "description": "Garantizar la sostenibilidad económica de la empresa mediante la formulación, análisis, aprobación y seguimiento del presupuesto de ventas, asegurando el cumplimiento de las metas financieras y estratégicas establecidas."
   }
 ]

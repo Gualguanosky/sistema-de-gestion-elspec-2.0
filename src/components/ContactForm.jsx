@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const N8N_FORM_WEBHOOK = 'http://localhost:5678/webhook/elspec-contacto-form';
+const N8N_FORM_WEBHOOK = '/api/n8n/elspec-contacto-form';
 
 export default function ContactForm() {
     const [formData, setFormData] = useState({

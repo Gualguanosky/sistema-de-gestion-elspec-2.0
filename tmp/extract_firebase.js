@@ -28,7 +28,7 @@ const COLLECTIONS = [
     'users', 'tickets', 'computers', 'customers', 'products', 'campaigns', 'ventas', 
     'projects', 'logistics', 'indicators', 'sgi_processes', 'sgi_evidence', 
     'sgi_indicator_types', 'visits', 'quotations', 'configuracionGlobal', 
-    'notifications', 'terminos_condiciones'
+    'notifications', 'terminos_condiciones', 'leads', 'prospects'
 ];
 
 async function extractData() {

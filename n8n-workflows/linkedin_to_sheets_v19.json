@@ -1,0 +1,253 @@
+{
+  "name": "LinkedIn + AI + Hunter - MASTER v19 (Conexiones Reales)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "interval": 1
+            }
+          ]
+        }
+      },
+      "id": "node-1",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 2",
+        "options": {}
+      },
+      "id": "node-2",
+      "name": "Read Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyCi7p6Gxc_fwB9kCbNtrIVN8k67FprHsWs",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={{ [{\n  \"parts\": [{\n    \"text\": \"Eres un estratega de ventas. Aquí tienes la lista de empresas: [Ecopetrol, Bancolombia, Grupo Aval, Suramericana, ISA, Nutresa, Grupo Argos, EPM, Avianca, Terpel, Alpina, Claro Colombia, Postobon, Bavaria, Celsia, Promigas, Banco de Bogota, Davivienda, Enel Colombia, Cementos Argos, Alqueria, Grupo Bolivar, Corficolombiana, Mineros, Tecnoglass, Valorem, Carvajal, Colombina, Manuelita, Riopaila Castilla]. Historial: \" + JSON.stringify($json) + \" Decide qué empresa buscar ahora. Responde SOLO JSON: {\\\"name\\\": \\\"Nombre\\\", \\\"domain\\\": \\\"dominio.com\\\"}\"\n  }]\n}] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-3",
+      "name": "Company Selector",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const content = $json.candidates[0].content.parts[0].text;\nconst jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\nreturn JSON.parse(jsonMatch ? jsonMatch[0] : \"{}\");"
+      },
+      "id": "node-4",
+      "name": "Format Selection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://serpapi.com/search.json?engine=google&q=site:linkedin.com/in \"Gerente\" OR \"Director\" OR \"CEO\" \"{{ $json.name }}\"&api_key=7db43b470e02c158500b63bb69483d396c541d4964fb29ba10dc24810aaad59b&google_domain=google.com.co&gl=co",
+        "options": {}
+      },
+      "id": "node-5",
+      "name": "LinkedIn Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyCi7p6Gxc_fwB9kCbNtrIVN8k67FprHsWs",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={{ [{\n  \"parts\": [{\n    \"text\": \"Extrae personas (firstName, lastName, cargo, linkedinURL). Resultados: \" + JSON.stringify($json.organic_results || []) + \" Responde SOLO JSON Array.\"\n  }]\n}] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-6",
+      "name": "Data Extraction",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const content = $json.candidates[0].content.parts[0].text;\n  const jsonMatch = content.match(/\\[[\\s\\S]*\\]/);\n  const jsonStr = jsonMatch ? jsonMatch[0] : \"[]\";\n  return JSON.parse(jsonStr).map(p => ({ json: { ...p } }));\n} catch (e) {\n  return [];\n}"
+      },
+      "id": "node-7",
+      "name": "Format List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 1",
+        "options": {}
+      },
+      "id": "node-8",
+      "name": "Read Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const existingLeads = $input.all();\nconst currentBatch = $node[\"Format List\"].all();\nconst existingNames = existingLeads.map(l => `${l.json.Nombre} ${l.json.Apellido}`.toLowerCase().trim());\nreturn currentBatch.filter(lead => {\n  const fullName = `${lead.json.firstName} ${lead.json.lastName}`.toLowerCase().trim();\n  return !existingNames.includes(fullName);\n});"
+      },
+      "id": "node-9",
+      "name": "Filter Dupes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.hunter.io/v2/email-finder?domain={{ $(\"Format Selection\").first().json.domain }}&first_name={{ $json.firstName }}&last_name={{ $json.lastName }}&api_key=0aa3be971b5e23ce516e21fa248e2d39feab52eb",
+        "options": {}
+      },
+      "id": "node-10",
+      "name": "Email Finder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let email = $json.data.email;\nlet status = \"Hunter\";\nif (!email) {\n  const p = $(\"Filter Dupes\").item.json;\n  const dom = $(\"Format Selection\").first().json.domain;\n  email = `${p.firstName.toLowerCase()}.${p.lastName.toLowerCase()}@${dom}`;\n  status = \"IA-Pattern\";\n}\nreturn {\n  ...$json, email, status, \n  firstName: $(\"Filter Dupes\").item.json.firstName,\n  lastName: $(\"Filter Dupes\").item.json.lastName,\n  cargo: $(\"Filter Dupes\").item.json.cargo,\n  company: $(\"Format Selection\").first().json.name,\n  linkedin: $(\"Filter Dupes\").item.json.linkedinURL\n};"
+      },
+      "id": "node-11",
+      "name": "Recovery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 1",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+            "Nombre": "={{ $json.firstName }}",
+            "Apellido": "={{ $json.lastName }}",
+            "Email": "={{ $json.email }}",
+            "Cargo": "={{ $json.cargo }}",
+            "Empresa": "={{ $json.company }}",
+            "LinkedIn": "={{ $json.linkedin }}",
+            "Confianza Email": "={{ $json.status }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "node-12",
+      "name": "Save Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "1R2ICBiltA6PD01Ctwa1rHIw58lqwxRm-UtYqHP8wCZk",
+        "sheetName": "Hoja 2",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Empresa": "={{ $(\"Format Selection\").first().json.name }}",
+            "Ultima_Fecha": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+            "Leads_Encontrados": "={{ $(\"Recovery\").all().length }}",
+            "Estado": "={{ $(\"Recovery\").all().length > 0 ? 'Activo' : 'Agotado?' }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "node-13",
+      "name": "Update Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2500,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": { "main": [ [ { "node": "Read Log", "type": "main", "index": 0 } ] ] },
+    "Read Log": { "main": [ [ { "node": "Company Selector", "type": "main", "index": 0 } ] ] },
+    "Company Selector": { "main": [ [ { "node": "Format Selection", "type": "main", "index": 0 } ] ] },
+    "Format Selection": { "main": [ [ { "node": "LinkedIn Search", "type": "main", "index": 0 } ] ] },
+    "LinkedIn Search": { "main": [ [ { "node": "Data Extraction", "type": "main", "index": 0 } ] ] },
+    "Data Extraction": { "main": [ [ { "node": "Format List", "type": "main", "index": 0 } ] ] },
+    "Format List": { "main": [ [ { "node": "Read Leads", "type": "main", "index": 0 } ] ] },
+    "Read Leads": { "main": [ [ { "node": "Filter Dupes", "type": "main", "index": 0 } ] ] },
+    "Filter Dupes": { "main": [ [ { "node": "Email Finder", "type": "main", "index": 0 } ] ] },
+    "Email Finder": { "main": [ [ { "node": "Recovery", "type": "main", "index": 0 } ] ] },
+    "Recovery": { "main": [ [ { "node": "Save Leads", "type": "main", "index": 0 } ] ] },
+    "Save Leads": { "main": [ [ { "node": "Update Log", "type": "main", "index": 0 } ] ] }
+  },
+  "active": true,
+  "settings": {}
+}

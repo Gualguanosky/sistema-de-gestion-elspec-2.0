@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  # 1. Reverse Proxy & SSL Manager
+  npm:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: elspec-proxy
+    restart: always
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    volumes:
+      - /data/elspec/proxy/data:/data
+      - /data/elspec/proxy/letsencrypt:/etc/letsencrypt
+    networks:
+      - elspec-network
+
+  # 2. Unified Database
+  db:
+    image: mariadb:11.6
+    container_name: elspec-db
+    restart: always
+    ports:
+      - '3306:3306'
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - /data/elspec/mysql:/var/lib/mysql
+    networks:
+      - elspec-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2.5 Database Visual Manager (phpMyAdmin)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: elspec-phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASSWORD}
+      UPLOAD_LIMIT: 500M
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - elspec-network
+
+  # 3. Automation Tool
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: elspec-n8n
+    restart: always
+    environment:
+      - N8N_HOST=n8n.gestionelspec.site
+      - N8N_PROTOCOL=https
+      - NODE_ENV=production
+      - N8N_BASE_URL=https://n8n.gestionelspec.site/
+      - WEBHOOK_URL=https://n8n.gestionelspec.site/
+      - N8N_BLOCK_BACKLOG_EXECUTIONS=true
+      - N8N_EXECUTION_PROCESS=main
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+      - GENERIC_TIMEZONE=America/Bogota
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - HUNTER_API_KEY=${HUNTER_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - /data/elspec/n8n_data:/home/node/.n8n
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - elspec-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # 4. Web Application Frontend
+  frontend:
+    image: nginx:alpine
+    container_name: elspec-frontend
+    restart: always
+    volumes:
+      - /data/elspec/www/dist:/usr/share/nginx/html
+    networks:
+      - elspec-network
+
+  # 5. API Gateway / Backend
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: elspec-api
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_HOST=db
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=3306
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - elspec-network
+
+networks:
+  elspec-network:
+    driver: bridge
